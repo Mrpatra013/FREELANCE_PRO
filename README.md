@@ -1,36 +1,327 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FreelancePro
 
-## Getting Started
+A comprehensive freelance management platform built with Next.js 14, TypeScript, and modern web technologies. Manage clients, projects, invoices, and expenses all in one place.
 
-First, run the development server:
+## Features
+
+### 🔐 Authentication & Security
+- Secure authentication with NextAuth.js
+- Protected routes and API endpoints
+- Session management
+
+### 👥 Client Management
+- Add, edit, and delete clients
+- Store client contact information and company details
+- View client project history
+
+### 📋 Project Management
+- Create and manage projects
+- Track project status (Active, Completed, Paused)
+- Set hourly or fixed rates
+- Assign projects to clients
+- Set deadlines and track progress
+
+### 💰 Invoice Management
+- Generate professional invoices
+- PDF invoice generation and download
+- Track invoice status (Paid/Unpaid)
+- Link invoices to projects and clients
+- Set due dates and payment tracking
+
+### 📊 Expense Tracking
+- Record project-related expenses
+- Categorize expenses (Software, Equipment, Travel, Other)
+- Link expenses to specific projects
+- Track expense dates and amounts
+
+### 📈 Dashboard Analytics
+- Overview of total revenue and expenses
+- Active projects count
+- Recent invoices and expenses
+- Quick access to key metrics
+
+### 📄 PDF Generation
+- Professional invoice PDF generation
+- Download and preview capabilities
+- Customizable invoice templates
+
+## Tech Stack
+
+- **Framework**: Next.js 14 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **UI Components**: Shadcn/ui
+- **Database**: SQLite (development) / PostgreSQL (production)
+- **ORM**: Prisma
+- **Authentication**: NextAuth.js
+- **PDF Generation**: jsPDF
+- **Validation**: Zod
+- **Icons**: Lucide React
+
+## Prerequisites
+
+- Node.js 18+ 
+- npm or yarn
+- Git
+
+## Quick Start
+
+### 1. Clone the Repository
+
+```bash
+git clone <repository-url>
+cd freelancepro
+```
+
+### 2. Automated Setup
+
+Run the setup script to automatically configure the environment:
+
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+This script will:
+- Check for Node.js installation
+- Install dependencies
+- Create environment files
+- Generate Prisma client
+- Set up the database
+- Generate NextAuth secret
+
+### 3. Manual Setup (Alternative)
+
+If you prefer manual setup:
+
+```bash
+# Install dependencies
+npm install
+
+# Copy environment files
+cp .env.example .env.local
+
+# Generate Prisma client
+npx prisma generate
+
+# Set up database
+npx prisma db push
+
+# Generate NextAuth secret
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+### 4. Configure Environment Variables
+
+Update `.env.local` with your configuration:
+
+```env
+# Database
+DATABASE_URL="file:./dev.db"
+
+# NextAuth.js
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="your-generated-secret"
+
+# OAuth Providers (Optional)
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+GITHUB_CLIENT_ID="your-github-client-id"
+GITHUB_CLIENT_SECRET="your-github-client-secret"
+```
+
+### 5. Start Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit [http://localhost:3000](http://localhost:3000) to see the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Database Setup
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### SQLite (Development)
 
-## Learn More
+The project is configured to use SQLite for local development:
 
-To learn more about Next.js, take a look at the following resources:
+```env
+DATABASE_URL="file:./dev.db"
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### PostgreSQL (Production)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+For production, update your environment variables:
 
-## Deploy on Vercel
+```env
+DATABASE_URL="postgresql://username:password@localhost:5432/freelancepro"
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Then update `prisma/schema.prisma`:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+### Using Docker (Optional)
+
+A `docker-compose.yml` file is provided for easy PostgreSQL setup:
+
+```bash
+docker-compose up -d
+```
+
+## Project Structure
+
+```
+freelancepro/
+├── src/
+│   ├── app/                    # Next.js App Router
+│   │   ├── (auth)/            # Authentication pages
+│   │   ├── (dashboard)/       # Protected dashboard pages
+│   │   ├── api/               # API routes
+│   │   └── globals.css        # Global styles
+│   ├── components/            # Reusable UI components
+│   │   └── ui/               # Shadcn/ui components
+│   ├── lib/                   # Utility functions
+│   │   ├── auth.ts           # Authentication config
+│   │   ├── prisma.ts         # Database client
+│   │   ├── validations.ts    # Zod schemas
+│   │   ├── error-handler.ts  # Error handling
+│   │   ├── api-middleware.ts # API middleware
+│   │   └── pdf-generator.ts  # PDF generation
+│   └── types/                # TypeScript type definitions
+├── prisma/
+│   └── schema.prisma         # Database schema
+├── public/                   # Static assets
+└── setup.sh                 # Automated setup script
+```
+
+## API Routes
+
+### Authentication
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/signin` - User login
+- `POST /api/auth/signout` - User logout
+
+### Clients
+- `GET /api/clients` - Get all clients
+- `POST /api/clients` - Create new client
+- `GET /api/clients/[id]` - Get client by ID
+- `PUT /api/clients/[id]` - Update client
+- `DELETE /api/clients/[id]` - Delete client
+
+### Projects
+- `GET /api/projects` - Get all projects
+- `POST /api/projects` - Create new project
+- `GET /api/projects/[id]` - Get project by ID
+- `PUT /api/projects/[id]` - Update project
+- `DELETE /api/projects/[id]` - Delete project
+
+### Invoices
+- `GET /api/invoices` - Get all invoices
+- `POST /api/invoices` - Create new invoice
+- `GET /api/invoices/[id]` - Get invoice by ID
+- `PUT /api/invoices/[id]` - Update invoice
+- `DELETE /api/invoices/[id]` - Delete invoice
+
+### Expenses
+- `GET /api/expenses` - Get all expenses
+- `POST /api/expenses` - Create new expense
+- `GET /api/expenses/[id]` - Get expense by ID
+- `PUT /api/expenses/[id]` - Update expense
+- `DELETE /api/expenses/[id]` - Delete expense
+
+## Deployment
+
+### Vercel (Recommended)
+
+1. Push your code to GitHub
+2. Connect your repository to Vercel
+3. Configure environment variables in Vercel dashboard
+4. Deploy
+
+### Environment Variables for Production
+
+```env
+DATABASE_URL="your-production-database-url"
+NEXTAUTH_URL="https://your-domain.com"
+NEXTAUTH_SECRET="your-production-secret"
+```
+
+### Database Migration
+
+For production deployment:
+
+```bash
+npx prisma migrate deploy
+```
+
+### Other Platforms
+
+The application can be deployed to any platform that supports Node.js:
+
+- **Netlify**: Use the Next.js build command
+- **Railway**: Connect your GitHub repository
+- **DigitalOcean App Platform**: Deploy from GitHub
+- **AWS Amplify**: Connect your repository
+
+## Development
+
+### Available Scripts
+
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run lint         # Run ESLint
+npm run type-check   # Run TypeScript checks
+```
+
+### Database Commands
+
+```bash
+npx prisma generate    # Generate Prisma client
+npx prisma db push     # Push schema changes to database
+npx prisma db pull     # Pull schema from database
+npx prisma studio      # Open Prisma Studio
+npx prisma migrate dev # Create and apply migration
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+If you encounter any issues or have questions, please:
+
+1. Check the existing issues on GitHub
+2. Create a new issue with detailed information
+3. Include steps to reproduce the problem
+
+## Roadmap
+
+- [ ] Time tracking functionality
+- [ ] Advanced reporting and analytics
+- [ ] Email notifications
+- [ ] Multi-currency support
+- [ ] Invoice templates customization
+- [ ] Client portal
+- [ ] Mobile app
+- [ ] Integration with payment gateways
+
+---
+
+**FreelancePro** - Streamline your freelance business management.
+# FREELANCE_PRO
