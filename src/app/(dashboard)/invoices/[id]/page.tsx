@@ -15,9 +15,9 @@ import InvoiceViewer from '@/components/invoices/InvoiceViewer';
 import { Printer, Download, Edit, ArrowLeft, Send, CheckCircle, XCircle } from 'lucide-react';
 
 interface InvoiceDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 interface InvoiceData {
@@ -53,18 +53,29 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
   const [showPDFDialog, setShowPDFDialog] = useState(false);
   const [formattedInvoiceData, setFormattedInvoiceData] = useState<any>(null);
   const [userBusinessInfo, setUserBusinessInfo] = useState<any>(null);
+  const [invoiceId, setInvoiceId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (status === 'authenticated' && session) {
+    const getParams = async () => {
+      const resolvedParams = await params;
+      setInvoiceId(resolvedParams.id);
+    };
+    getParams();
+  }, [params]);
+
+  useEffect(() => {
+    if (status === 'authenticated' && session && invoiceId) {
       fetchInvoice();
       fetchUserBusinessInfo();
     }
-  }, [status, session, params.id]);
+  }, [status, session, invoiceId]);
 
   const fetchInvoice = async () => {
+    if (!invoiceId) return;
+    
     try {
       setLoading(true);
-      const response = await fetch(`/api/invoices/${params.id}`);
+      const response = await fetch(`/api/invoices/${invoiceId}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch invoice');

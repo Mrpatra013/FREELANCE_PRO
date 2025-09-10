@@ -61,7 +61,7 @@ export interface InvoiceData {
   paymentTerms?: string;
 }
 
-export const generateNewInvoicePDF = async (invoiceData: InvoiceData): Promise<Uint8Array> => {
+export const generateNewInvoicePDF = async (invoiceData: InvoiceData): Promise<ArrayBuffer> => {
   try {
     console.log('Starting new template PDF generation with data:', invoiceData);
     
@@ -589,7 +589,7 @@ export const generateNewInvoicePDF = async (invoiceData: InvoiceData): Promise<U
     doc.text('Page 2 of 2', pageWidth - margin, footerY2, { align: 'right' });
     
     console.log('New template PDF generation completed successfully');
-    return new Uint8Array(doc.output('arraybuffer') as ArrayBuffer);
+    return doc.output('arraybuffer') as ArrayBuffer;
     
   } catch (error) {
     console.error('Error generating new template PDF:', error);

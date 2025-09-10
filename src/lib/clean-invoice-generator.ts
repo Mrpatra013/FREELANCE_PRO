@@ -50,7 +50,7 @@ export interface InvoiceData {
   paymentTerms?: string;
 }
 
-export const generateCleanInvoicePDF = async (invoiceData: InvoiceData): Promise<Uint8Array> => {
+export const generateCleanInvoicePDF = async (invoiceData: InvoiceData): Promise<ArrayBuffer> => {
   try {
     console.log('Starting clean PDF generation with data:', invoiceData);
     
@@ -254,7 +254,7 @@ export const generateCleanInvoicePDF = async (invoiceData: InvoiceData): Promise
     doc.text('GeneralBlue', margin, pageHeight - 15);
     
     console.log('Clean PDF generation completed successfully');
-    return new Uint8Array(doc.output('arraybuffer') as ArrayBuffer);
+    return doc.output('arraybuffer') as ArrayBuffer;
     
   } catch (error) {
     console.error('Error generating clean PDF:', error);
