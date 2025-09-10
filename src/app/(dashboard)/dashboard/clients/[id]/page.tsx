@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building2, ChevronLeft, Mail, Phone, ScrollText } from 'lucide-react';
 import Link from 'next/link';
+import { Prisma } from '@/generated/prisma';
 
 export const metadata: Metadata = {
   title: 'Client Details | FreelancePro',
@@ -18,6 +19,12 @@ interface Props {
     id: string;
   }>;
 }
+
+type ClientWithProjects = Prisma.ClientGetPayload<{
+  include: {
+    projects: true;
+  };
+}>;
 
 export default async function ClientDetailPage({ params }: Props) {
   const { id } = await params;
@@ -35,7 +42,7 @@ export default async function ClientDetailPage({ params }: Props) {
     redirect('/login');
   }
 
-  const client = await prisma.client.findFirst({
+  const client: ClientWithProjects | null = await prisma.client.findFirst({
     where: {
       id: id,
       userId: user.id,
