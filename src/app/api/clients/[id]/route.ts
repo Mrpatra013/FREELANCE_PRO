@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 
 export async function GET(
   request: NextRequest,
@@ -169,7 +169,7 @@ export async function DELETE(
     });
 
     // Use a transaction to delete everything in the correct order
-    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    await prisma.$transaction(async (tx: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$extends'>) => {
       // First, delete all invoices for all projects of this client
       for (const project of associatedProjects) {
         if (project.invoices.length > 0) {
