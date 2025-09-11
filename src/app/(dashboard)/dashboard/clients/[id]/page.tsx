@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building2, ChevronLeft, Mail, Phone, ScrollText } from 'lucide-react';
 import Link from 'next/link';
-import { Prisma } from '@/generated/prisma';
+import { Prisma } from '@prisma/client';
 
 export const metadata: Metadata = {
   title: 'Client Details | FreelancePro',

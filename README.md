@@ -240,23 +240,27 @@ freelancepro/
 
 1. Push your code to GitHub
 2. Connect your repository to Vercel
-3. Configure environment variables in Vercel dashboard
+3. Configure environment variables in Vercel dashboard:
+   - `NEXTAUTH_URL`: Your deployed app URL (e.g., https://your-app.vercel.app)
+   - `NEXTAUTH_SECRET`: A secure random string for JWT encryption
+   - `DATABASE_URL`: `file:./prisma/dev.db` (SQLite database)
 4. Deploy
 
 ### Environment Variables for Production
 
 ```env
-DATABASE_URL="your-production-database-url"
+DATABASE_URL="file:./prisma/dev.db"
 NEXTAUTH_URL="https://your-domain.com"
 NEXTAUTH_SECRET="your-production-secret"
 ```
 
-### Database Migration
+### Database Setup
 
-For production deployment:
+The application uses SQLite database which is automatically created during the build process. No external database setup required:
 
 ```bash
-npx prisma migrate deploy
+# Database is automatically migrated during build
+npm run build
 ```
 
 ### Other Platforms

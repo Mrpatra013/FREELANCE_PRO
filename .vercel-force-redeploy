@@ -1,8 +1,0 @@
-# Force Vercel redeploy
-# This file helps force a fresh deployment when Vercel caches old code
-# Last updated: 2025-01-10T13:44:30.000Z
-
-Deployment timestamp: 2025-01-10T13:44:30.000Z
-TypeScript fix applied: Transaction parameter properly typed
-Build status: ✅ Local build successful
-TypeScript check: ✅ No type errors found

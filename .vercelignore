@@ -34,13 +34,9 @@ Thumbs.db
 *.tmp
 *.temp
 
-# Test files
-test-supabase.js
-
 # Scripts
 setup.sh
 deploy.sh
 
 # Documentation (optional - remove if you want docs deployed)
-SUPABASE_SETUP.md
 DEPLOYMENT_GUIDE.md
