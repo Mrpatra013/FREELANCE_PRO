@@ -7,12 +7,14 @@ Your FreelancePro application is now ready for production deployment with Supaba
 ### 1. Vercel (Recommended)
 
 **Why Vercel?**
+
 - Perfect for Next.js applications
 - Automatic deployments from Git
 - Built-in environment variable management
 - Free tier available
 
 **Steps:**
+
 1. Push your code to GitHub/GitLab/Bitbucket
 2. Go to [vercel.com](https://vercel.com) and sign up
 3. Click "New Project" and import your repository
@@ -23,13 +25,14 @@ Your FreelancePro application is now ready for production deployment with Supaba
    NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxb2djcHRibHVwc3NwanF1cnRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NzU4NTMsImV4cCI6MjA3MzE1MTg1M30.pLIj8bsNV7aoj2V-w9Rouh7cN9lS-OLiYo0n-mfoOBo
    SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxb2djcHRibHVwc3NwanF1cnRuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NzU3NTg1MywiZXhwIjoyMDczMTUxODUzfQ.IRaOaaBBIHKlfOx8yrJT3l3b_NvVweL-72bqfg__TWw
    NEXTAUTH_SECRET=your-nextauth-secret-here
-   NEXTAUTH_URL=https://your-app-name.vercel.app
+   NEXTAUTH_URL=https://freelancepro.vercel.app
    ```
 5. Deploy!
 
 ### 2. Netlify
 
 **Steps:**
+
 1. Push code to Git repository
 2. Go to [netlify.com](https://netlify.com)
 3. Click "New site from Git"
@@ -43,6 +46,7 @@ Your FreelancePro application is now ready for production deployment with Supaba
 ### 3. Railway
 
 **Steps:**
+
 1. Go to [railway.app](https://railway.app)
 2. Click "Deploy from GitHub repo"
 3. Select your repository
@@ -53,7 +57,9 @@ Your FreelancePro application is now ready for production deployment with Supaba
 ## 🔧 Pre-Deployment Checklist
 
 ### ✅ Environment Variables
+
 Make sure these are set in your deployment platform:
+
 - `DATABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -62,12 +68,15 @@ Make sure these are set in your deployment platform:
 - `NEXTAUTH_URL` (your production domain)
 
 ### ✅ Database Setup
+
 - ✅ Supabase project created
 - ✅ Database schema pushed
 - ✅ Connection tested
 
 ### ✅ Build Optimization
+
 Run these commands before deploying:
+
 ```bash
 # Test production build locally
 npm run build
@@ -80,12 +89,14 @@ npm run lint
 ## 🌐 Custom Domain Setup
 
 ### Vercel:
+
 1. Go to your project dashboard
 2. Click "Domains"
 3. Add your custom domain
 4. Update DNS records as instructed
 
 ### Netlify:
+
 1. Go to "Domain settings"
 2. Add custom domain
 3. Update DNS records
@@ -100,6 +111,7 @@ npm run lint
 ## 📊 Monitoring & Analytics
 
 ### Add Analytics (Optional)
+
 ```bash
 # Google Analytics
 npm install @next/third-parties
@@ -109,6 +121,7 @@ npm install @vercel/analytics
 ```
 
 ### Error Monitoring
+
 ```bash
 # Sentry for error tracking
 npm install @sentry/nextjs
@@ -117,6 +130,7 @@ npm install @sentry/nextjs
 ## 🚀 Quick Deploy Commands
 
 ### If using Vercel CLI:
+
 ```bash
 # Install Vercel CLI
 npm i -g vercel
@@ -134,6 +148,7 @@ vercel --prod
 ```
 
 ### If using Railway CLI:
+
 ```bash
 # Install Railway CLI
 npm install -g @railway/cli
@@ -158,16 +173,19 @@ railway up
 ### Common Issues:
 
 **Build Errors:**
+
 - Check TypeScript errors: `npm run build`
 - Verify all imports are correct
 - Ensure environment variables are set
 
 **Database Connection:**
+
 - Verify DATABASE_URL is correct
 - Check Supabase project is active
 - Ensure IP restrictions allow your deployment platform
 
 **Authentication Issues:**
+
 - Update NEXTAUTH_URL to production domain
 - Verify NEXTAUTH_SECRET is set
 - Check OAuth provider settings if using social login
@@ -175,6 +193,7 @@ railway up
 ## 🎉 You're Ready!
 
 Your FreelancePro application is production-ready with:
+
 - ✅ Scalable PostgreSQL database (Supabase)
 - ✅ Modern Next.js architecture
 - ✅ Secure authentication
