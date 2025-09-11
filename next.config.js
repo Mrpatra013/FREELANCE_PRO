@@ -10,11 +10,6 @@ const nextConfig = {
     // your project has TypeScript errors.
     ignoreBuildErrors: true,
   },
-  // Configure for Netlify deployment
-  output: 'standalone',
-  images: {
-    unoptimized: true,
-  },
   // Configure Turbopack to resolve the workspace root issue
   turbopack: {
     // Set the root directory to the current project
