@@ -5,16 +5,19 @@ A comprehensive freelance management platform built with Next.js 14, TypeScript,
 ## Features
 
 ### 🔐 Authentication & Security
+
 - Secure authentication with NextAuth.js
 - Protected routes and API endpoints
 - Session management
 
 ### 👥 Client Management
+
 - Add, edit, and delete clients
 - Store client contact information and company details
 - View client project history
 
 ### 📋 Project Management
+
 - Create and manage projects
 - Track project status (Active, Completed, Paused)
 - Set hourly or fixed rates
@@ -22,6 +25,7 @@ A comprehensive freelance management platform built with Next.js 14, TypeScript,
 - Set deadlines and track progress
 
 ### 💰 Invoice Management
+
 - Generate professional invoices
 - PDF invoice generation and download
 - Track invoice status (Paid/Unpaid)
@@ -29,18 +33,21 @@ A comprehensive freelance management platform built with Next.js 14, TypeScript,
 - Set due dates and payment tracking
 
 ### 📊 Expense Tracking
+
 - Record project-related expenses
 - Categorize expenses (Software, Equipment, Travel, Other)
 - Link expenses to specific projects
 - Track expense dates and amounts
 
 ### 📈 Dashboard Analytics
+
 - Overview of total revenue and expenses
 - Active projects count
 - Recent invoices and expenses
 - Quick access to key metrics
 
 ### 📄 PDF Generation
+
 - Professional invoice PDF generation
 - Download and preview capabilities
 - Customizable invoice templates
@@ -60,7 +67,7 @@ A comprehensive freelance management platform built with Next.js 14, TypeScript,
 
 ## Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
 - Git
 
@@ -83,6 +90,7 @@ chmod +x setup.sh
 ```
 
 This script will:
+
 - Check for Node.js installation
 - Install dependencies
 - Create environment files
@@ -202,11 +210,13 @@ freelancepro/
 ## API Routes
 
 ### Authentication
+
 - `POST /api/auth/register` - User registration
 - `POST /api/auth/signin` - User login
 - `POST /api/auth/signout` - User logout
 
 ### Clients
+
 - `GET /api/clients` - Get all clients
 - `POST /api/clients` - Create new client
 - `GET /api/clients/[id]` - Get client by ID
@@ -214,6 +224,7 @@ freelancepro/
 - `DELETE /api/clients/[id]` - Delete client
 
 ### Projects
+
 - `GET /api/projects` - Get all projects
 - `POST /api/projects` - Create new project
 - `GET /api/projects/[id]` - Get project by ID
@@ -221,6 +232,7 @@ freelancepro/
 - `DELETE /api/projects/[id]` - Delete project
 
 ### Invoices
+
 - `GET /api/invoices` - Get all invoices
 - `POST /api/invoices` - Create new invoice
 - `GET /api/invoices/[id]` - Get invoice by ID
@@ -228,6 +240,7 @@ freelancepro/
 - `DELETE /api/invoices/[id]` - Delete invoice
 
 ### Expenses
+
 - `GET /api/expenses` - Get all expenses
 - `POST /api/expenses` - Create new expense
 - `GET /api/expenses/[id]` - Get expense by ID
@@ -328,4 +341,5 @@ If you encounter any issues or have questions, please:
 ---
 
 **FreelancePro** - Streamline your freelance business management.
+
 # FREELANCE_PRO
