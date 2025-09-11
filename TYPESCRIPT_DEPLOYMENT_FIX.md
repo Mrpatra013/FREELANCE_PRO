@@ -75,6 +75,7 @@ await prisma.$transaction(async (tx) => {
 
 - `/package.json` - Added prisma generate to build and postinstall scripts
 - `/src/app/api/clients/[id]/route.ts` - Fixed import path and transaction type
+- `/src/lib/prisma.ts` - Updated Prisma client import path from `@prisma/client` to `@/generated/prisma`
 - `/next.config.js` - Added TypeScript error handling
 - `/.vercelignore` - Excluded dev files from deployment
 - `/.vercel-force-redeploy` - Timestamp for cache busting
