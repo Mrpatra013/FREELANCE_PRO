@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -183,10 +184,10 @@ export function ProjectList({ projects, clients, onStatusChange }: ProjectListPr
             )}
             
             <Button asChild>
-              <a href="/projects/new">
+              <Link href="/projects/new">
                 <Plus className="h-4 w-4 mr-2" />
                 New Project
-              </a>
+              </Link>
             </Button>
           </div>
         </div>
@@ -225,10 +226,10 @@ function renderProjectGrid(
           No projects match your current filters. Try adjusting your search or filters, or create a new project.
         </p>
         <Button asChild className="mt-4">
-          <a href="/projects/new">
+          <Link href="/projects/new">
             <Plus className="h-4 w-4 mr-2" />
             Create New Project
-          </a>
+          </Link>
         </Button>
       </div>
     );

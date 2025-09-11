@@ -68,8 +68,8 @@ export const generateInvoicePDF = async (invoiceData: InvoiceData): Promise<Uint
     };
     
     const missingFields = Object.entries(requiredFields)
-      .filter(([_, value]) => !value || (typeof value === 'string' && !value.trim()))
-      .map(([field, _]) => field);
+      .filter(([, value]) => !value || (typeof value === 'string' && !value.trim()))
+      .map(([field]) => field);
     
     if (missingFields.length > 0) {
       const errorMessage = `Missing required fields for PDF generation: ${missingFields.join(', ')}`;

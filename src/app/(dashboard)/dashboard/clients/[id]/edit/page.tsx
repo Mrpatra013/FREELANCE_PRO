@@ -57,7 +57,7 @@ export default async function EditClientPage({ params }: Props) {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Edit Client</h1>
           <p className="text-muted-foreground">
-            Update {client.name}'s information
+            Update {client.name}&apos;s information
           </p>
         </div>
       </div>

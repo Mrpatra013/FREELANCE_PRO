@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProjectStatusBadge } from './ProjectStatusBadge';
 import { AlertCircle } from 'lucide-react';
-import { toast } from 'sonner';
 
 type ProjectStatus = 'ACTIVE' | 'COMPLETED' | 'PAUSED';
 

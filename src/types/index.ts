@@ -1,4 +1,4 @@
-import { Prisma } from "../generated/prisma";
+import { Prisma } from "@prisma/client";
 
 // Client with relations
 export type Client = Prisma.ClientGetPayload<{

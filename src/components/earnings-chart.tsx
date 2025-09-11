@@ -169,7 +169,7 @@ export function EarningsChart({ className }: EarningsChartProps) {
         <div className="space-y-4">
           <h4 className="text-sm font-medium">Last 6 Months</h4>
           <div className="space-y-3">
-            {recentMonths.map((month, index) => {
+            {recentMonths.map((month) => {
               const percentage = maxEarnings > 0 ? (month.earnings / maxEarnings) * 100 : 0;
               
               return (

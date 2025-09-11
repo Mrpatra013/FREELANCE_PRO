@@ -75,8 +75,8 @@ export const generateNewInvoicePDF = async (invoiceData: InvoiceData): Promise<A
     };
     
     const missingFields = Object.entries(requiredFields)
-      .filter(([_, value]) => !value || (typeof value === 'string' && !value.trim()))
-      .map(([field, _]) => field);
+      .filter(([, value]) => !value || (typeof value === 'string' && !value.trim()))
+      .map(([field]) => field);
     
     if (missingFields.length > 0) {
       const errorMessage = `Missing required fields for PDF generation: ${missingFields.join(', ')}`;
@@ -601,7 +601,6 @@ export const generateNewInvoicePDF = async (invoiceData: InvoiceData): Promise<A
 export const downloadBlueInvoicePDF = (invoiceData: InvoiceData) => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 20;
 
   // Blue curved header background
@@ -616,15 +615,10 @@ export const downloadBlueInvoicePDF = (invoiceData: InvoiceData) => {
   // Create curved bottom using bezier curves
   doc.setFillColor(41, 84, 144);
   const curveHeight = 30;
-  const controlPoint1X = pageWidth * 0.3;
-  const controlPoint2X = pageWidth * 0.7;
   
   // Draw curved bottom of header
   doc.setDrawColor(41, 84, 144);
   doc.setFillColor(41, 84, 144);
-  
-  // Create path for curved bottom
-  const path = `M 0 80 Q ${controlPoint1X} ${80 + curveHeight} ${pageWidth/2} ${80 + curveHeight/2} Q ${controlPoint2X} ${80} ${pageWidth} 80 L ${pageWidth} 0 L 0 0 Z`;
   
   // Since jsPDF doesn't support SVG paths directly, we'll simulate with multiple rectangles
   for (let x = 0; x < pageWidth; x += 2) {
@@ -908,7 +902,6 @@ export const getNewInvoicePDFDataURL = async (invoiceData: InvoiceData): Promise
 export const getBlueInvoicePDFDataURL = async (invoiceData: InvoiceData): Promise<string> => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 20;
 
   // Blue curved header background
@@ -923,8 +916,6 @@ export const getBlueInvoicePDFDataURL = async (invoiceData: InvoiceData): Promis
   // Create curved bottom using bezier curves
   doc.setFillColor(41, 84, 144);
   const curveHeight = 30;
-  const controlPoint1X = pageWidth * 0.3;
-  const controlPoint2X = pageWidth * 0.7;
   
   // Draw curved bottom of header
   doc.setDrawColor(41, 84, 144);

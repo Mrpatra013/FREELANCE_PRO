@@ -66,8 +66,8 @@ export const generateCleanInvoicePDF = async (invoiceData: InvoiceData): Promise
     };
     
     const missingFields = Object.entries(requiredFields)
-      .filter(([_, value]) => !value || (typeof value === 'string' && !value.trim()))
-      .map(([field, _]) => field);
+      .filter(([, value]) => !value || (typeof value === 'string' && !value.trim()))
+      .map(([field]) => field);
     
     if (missingFields.length > 0) {
       const errorMessage = `Missing required fields for PDF generation: ${missingFields.join(', ')}`;
@@ -217,7 +217,8 @@ export const generateCleanInvoicePDF = async (invoiceData: InvoiceData): Promise
     doc.rect(summaryX - 10, yPos - 8, 120, 15, 'F');
     doc.setFont('helvetica', 'bold');
     // Payment terms text removed to eliminate 'Net 30'
-    doc.text('Total Due:', summaryX + 60, yPos);
+    doc.text('Total Due:', summaryX, yPos);
+    doc.text(`$${totalAmount.toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
     doc.setFont('helvetica', 'normal');
     
     // Terms and Conditions section

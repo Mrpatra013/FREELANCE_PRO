@@ -94,7 +94,6 @@ export const generateInvoicePDF = async (invoiceData: InvoiceData): Promise<Uint
   // Invoice details (top right)
   doc.setFontSize(11)
   doc.setTextColor(80, 80, 80)
-  const rightX = pageWidth - margin - 60
   doc.text(`Invoice #: ${invoiceData.invoiceNumber}`, 140, 70)
   doc.text(`Date: ${invoiceData.invoiceDate}`, 140, 80)
   

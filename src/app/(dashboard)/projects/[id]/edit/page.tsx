@@ -90,7 +90,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
         </div>
         <div className="p-8 text-center">
           <h2 className="text-2xl font-bold mb-2">Project Not Found</h2>
-          <p className="text-muted-foreground mb-4">The project you're looking for doesn't exist or you don't have access to it.</p>
+          <p className="text-muted-foreground mb-4">The project you&apos;re looking for doesn&apos;t exist or you don&apos;t have access to it.</p>
           <Button onClick={() => router.push('/projects')}>Go to Projects</Button>
         </div>
       </div>

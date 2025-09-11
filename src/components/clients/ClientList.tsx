@@ -1,7 +1,7 @@
 'use client';
 
 import { type ClientBasic } from '@/types';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { ClientCard } from './ClientCard';
 

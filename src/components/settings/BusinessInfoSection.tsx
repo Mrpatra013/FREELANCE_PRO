@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Upload, Building2, Mail, Image as ImageIcon, Phone, MapPin, CreditCard, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Upload, Building2, Image as ImageIcon, Phone, MapPin, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 import { BankingDetailsToggle, BankingFieldToggle } from './BankingDetailsToggle';
 import { Textarea } from '@/components/ui/textarea';
@@ -493,9 +494,11 @@ export function BusinessInfoSection() {
                 </div>
                 {logoPreview && (
                   <div className="h-12 w-12 rounded border">
-                    <img
+                    <Image
                       src={logoPreview}
                       alt="Company logo"
+                      width={48}
+                      height={48}
                       className="h-full w-full object-contain rounded"
                     />
                   </div>

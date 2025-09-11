@@ -103,7 +103,6 @@ export function ProjectDashboard() {
   // Calculate project statistics
   const activeCount = projects.filter(p => p.status === 'ACTIVE').length;
   const completedCount = projects.filter(p => p.status === 'COMPLETED').length;
-  const pausedCount = projects.filter(p => p.status === 'PAUSED').length;
   
   // Get projects due this week
   const today = new Date();

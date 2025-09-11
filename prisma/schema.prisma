@@ -19,25 +19,25 @@ model User {
   password  String
   name      String
   createdAt DateTime @default(now()) @map("created_at")
-  
-  // Business information for invoice generation
-  companyName              String?  @map("company_name")
-  businessEmail            String?  @map("business_email")
-  phoneNumber              String?  @map("phone_number")
-  businessAddress          String?  @map("business_address")
-  logoUrl                  String?  @map("logo_url")
-  invoiceSettingsComplete  Boolean  @default(false) @map("invoice_settings_complete")
-  
-  // Banking information for invoices
-  bankName                 String?  @map("bank_name")
-  accountNumber            String?  @map("account_number")
-  accountHolderName        String?  @map("account_holder_name")
-  ifscCode                 String?  @map("ifsc_code")
-  upiId                    String?  @map("upi_id")
 
-  clients   Client[]
-  projects  Project[]
-  invoices  Invoice[]
+  // Business information for invoice generation
+  companyName             String? @map("company_name")
+  businessEmail           String? @map("business_email")
+  phoneNumber             String? @map("phone_number")
+  businessAddress         String? @map("business_address")
+  logoUrl                 String? @map("logo_url")
+  invoiceSettingsComplete Boolean @default(false) @map("invoice_settings_complete")
+
+  // Banking information for invoices
+  bankName          String? @map("bank_name")
+  accountNumber     String? @map("account_number")
+  accountHolderName String? @map("account_holder_name")
+  ifscCode          String? @map("ifsc_code")
+  upiId             String? @map("upi_id")
+
+  clients  Client[]
+  projects Project[]
+  invoices Invoice[]
 
   @@map("users")
 }
@@ -54,9 +54,9 @@ model Client {
   notes       String?
   createdAt   DateTime @default(now()) @map("created_at")
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  projects  Project[]
-  invoices  Invoice[]
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projects Project[]
+  invoices Invoice[]
 
   @@map("clients")
 }
@@ -85,9 +85,9 @@ model Project {
   status      ProjectStatus @default(ACTIVE)
   createdAt   DateTime      @default(now()) @map("created_at")
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  client    Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  invoices  Invoice[]
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client   Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  invoices Invoice[]
 
   @@map("projects")
 }
@@ -109,11 +109,11 @@ model Invoice {
   status        InvoiceStatus @default(UNPAID)
   createdAt     DateTime      @default(now()) @map("created_at")
   paidAt        DateTime?     @map("paid_at")
-  
+
   // Freelancer business information
-  freelancerCompanyName    String? @map("freelancer_company_name")
-  freelancerBusinessEmail  String? @map("freelancer_business_email")
-  freelancerLogoUrl        String? @map("freelancer_logo_url")
+  freelancerCompanyName   String? @map("freelancer_company_name")
+  freelancerBusinessEmail String? @map("freelancer_business_email")
+  freelancerLogoUrl       String? @map("freelancer_logo_url")
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)

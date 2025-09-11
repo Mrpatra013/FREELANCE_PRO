@@ -526,7 +526,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
         </div>
         <Card>
           <CardContent className="flex items-center justify-center h-64">
-            <p className="text-muted-foreground">Project not found or you don't have access to it.</p>
+            <p className="text-muted-foreground">Project not found or you don&apos;t have access to it.</p>
           </CardContent>
         </Card>
       </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+
 import { Button } from '@/components/ui/button';
 import { CalendarIcon, Clock, AlertTriangle } from 'lucide-react';
 import { format, isAfter, isBefore, addDays } from 'date-fns';
@@ -24,10 +24,9 @@ interface ProjectsOverviewProps {
   projects: Project[];
   activeCount: number;
   completedCount: number;
-  pausedCount: number;
 }
 
-export function ProjectsOverview({ projects, activeCount, completedCount, pausedCount }: ProjectsOverviewProps) {
+export function ProjectsOverview({ projects, activeCount, completedCount }: ProjectsOverviewProps) {
   // Get projects due this week
   const today = new Date();
   const nextWeek = addDays(today, 7);

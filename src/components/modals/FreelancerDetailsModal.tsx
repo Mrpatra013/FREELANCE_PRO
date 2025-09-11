@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import Image from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import { X, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface FreelancerDetails {
@@ -38,7 +39,8 @@ export default function FreelancerDetailsModal({
     saveForFuture: initialData?.saveForFuture ?? true
   });
   
-  const [logoFile, setLogoFile] = useState<File | null>(null);
+
+  // We don't need to track logoFile state as it's not used elsewhere
   const [logoPreview, setLogoPreview] = useState<string>(initialData?.logoUrl || '');
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -93,8 +95,6 @@ export default function FreelancerDetailsModal({
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setLogoFile(file);
-      
       // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -115,8 +115,6 @@ export default function FreelancerDetailsModal({
     event.preventDefault();
     const file = event.dataTransfer.files[0];
     if (file) {
-      setLogoFile(file);
-      
       // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -130,7 +128,6 @@ export default function FreelancerDetailsModal({
   };
 
   const removeLogo = () => {
-    setLogoFile(null);
     setLogoPreview('');
     setFormData(prev => ({ ...prev, logoUrl: '' }));
     if (fileInputRef.current) {
@@ -217,9 +214,11 @@ export default function FreelancerDetailsModal({
               {logoPreview ? (
                 <div className="space-y-4">
                   <div className="relative inline-block">
-                    <img
+                    <Image
                       src={logoPreview}
                       alt="Logo preview"
+                      width={128}
+                      height={128}
                       className="max-w-32 max-h-32 object-contain mx-auto"
                     />
                     <button

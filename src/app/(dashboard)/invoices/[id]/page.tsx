@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -11,8 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from 'sonner';
 
 import PDFGenerator from '@/components/pdf/PDFGenerator';
-import InvoiceViewer from '@/components/invoices/InvoiceViewer';
-import { Printer, Download, Edit, ArrowLeft, Send, CheckCircle, XCircle } from 'lucide-react';
+import { Printer, Download, Edit, ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 
 interface InvoiceDetailPageProps {
   params: Promise<{
@@ -63,14 +62,7 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
     getParams();
   }, [params]);
 
-  useEffect(() => {
-    if (status === 'authenticated' && session && invoiceId) {
-      fetchInvoice();
-      fetchUserBusinessInfo();
-    }
-  }, [status, session, invoiceId]);
-
-  const fetchInvoice = async () => {
+  const fetchInvoice = useCallback(async () => {
     if (!invoiceId) return;
     
     try {
@@ -89,9 +81,9 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [invoiceId]);
 
-  const fetchUserBusinessInfo = async () => {
+  const fetchUserBusinessInfo = useCallback(async () => {
     try {
       const response = await fetch('/api/user/business-info');
       if (response.ok) {
@@ -101,7 +93,14 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
     } catch (error) {
       console.error('Error fetching business info:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (status === 'authenticated' && session && invoiceId) {
+      fetchInvoice();
+      fetchUserBusinessInfo();
+    }
+  }, [status, session, invoiceId, fetchInvoice, fetchUserBusinessInfo]);
 
   const prepareInvoiceData = async () => {
     if (!invoice || !userBusinessInfo) return null;
@@ -168,23 +167,6 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
     } catch (error) {
       console.error('Error downloading PDF:', error);
       toast.error('Failed to download PDF');
-    }
-  };
-
-  const handlePreviewPDF = async () => {
-    try {
-      const invoiceData = await prepareInvoiceData();
-      if (!invoiceData) {
-        toast.error('Failed to prepare invoice data');
-        return;
-      }
-      
-      // Open the PDF generation dialog with preview mode
-      setShowPDFDialog(true);
-      toast.success('Preparing PDF preview...');
-    } catch (error) {
-      console.error('Error preparing invoice data for preview:', error);
-      toast.error('Error preparing invoice data');
     }
   };
 

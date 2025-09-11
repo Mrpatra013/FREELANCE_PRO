@@ -1,10 +1,9 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CalendarDays, Clock, DollarSign, BarChart3 } from 'lucide-react';
 import { ProjectStatusBadge } from './ProjectStatusBadge';
-import { format, isAfter, isBefore, isToday, addDays } from 'date-fns';
+import { format, isAfter, isBefore, addDays } from 'date-fns';
 
 interface Project {
   id: string;
