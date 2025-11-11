@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -65,7 +65,9 @@ interface Invoice {
 }
 
 export default function InvoicesPage() {
-  const { data: session, status } = useSession();
+  const supabase = getSupabaseBrowserClient();
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -91,13 +93,25 @@ export default function InvoicesPage() {
   const [selectedInvoiceData, setSelectedInvoiceData] = useState<any>(null);
 
   useEffect(() => {
-    if (status === 'authenticated' && session) {
-      fetchInvoices();
-      fetchProjects();
-      fetchUserBusinessInfo();
-      fetchNextInvoiceNumber();
-    }
-  }, [status, session]);
+    let mounted = true;
+    (async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (mounted) {
+        setIsAuthenticated(!error && !!data?.user);
+        setAuthChecked(true);
+        if (!error && data?.user) {
+          // Fetch critical data concurrently for speed
+          await Promise.all([
+            fetchInvoices(),
+            fetchProjects(),
+            fetchUserBusinessInfo(),
+            fetchNextInvoiceNumber(),
+          ]);
+        }
+      }
+    })();
+    return () => { mounted = false };
+  }, [supabase]);
   
   const fetchNextInvoiceNumber = async () => {
     try {
@@ -126,7 +140,7 @@ export default function InvoicesPage() {
 
   const fetchInvoices = async () => {
     try {
-      const response = await fetch('/api/invoices');
+      const response = await fetch('/api/invoices?limit=25&page=1');
       if (response.ok) {
         const data = await response.json();
         setInvoices(data);
@@ -355,7 +369,7 @@ export default function InvoicesPage() {
     });
   };
 
-  if (loading) {
+  if (!authChecked || loading) {
     return (
       <>
         <div className="flex items-center justify-center h-64">

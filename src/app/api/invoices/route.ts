@@ -1,28 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-options';
+import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
 
 // GET /api/invoices - Get all invoices for the authenticated user
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.email) {
+    const supabase = await getSupabaseServerClient();
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { email: data.user.email },
     });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Get projectId from query parameters
+    // Get projectId, pagination from query parameters
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('projectId');
+    const pageParam = searchParams.get('page');
+    const limitParam = searchParams.get('limit');
+    const page = Math.max(parseInt(pageParam || '1', 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(limitParam || '25', 10) || 25, 1), 100);
+    const skip = (page - 1) * limit;
 
     // Build where clause based on whether projectId is provided
     const whereClause = projectId 
@@ -40,11 +44,18 @@ export async function GET(request: NextRequest) {
       where: whereClause,
       include: {
         project: {
-          include: {
-            client: true,
+          select: {
+            id: true,
+            name: true,
+            rate: true,
+            client: {
+              select: { id: true, name: true, email: true, company: true },
+            },
           },
         },
       },
+      take: limit,
+      skip,
       orderBy: {
         createdAt: 'desc',
       },
@@ -63,14 +74,14 @@ export async function GET(request: NextRequest) {
 // POST /api/invoices - Create a new invoice
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.email) {
+    const supabase = await getSupabaseServerClient();
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { email: data.user.email },
     });
 
     if (!user) {

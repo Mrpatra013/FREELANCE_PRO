@@ -1,6 +1,5 @@
-'use client';
+'use client'
 
-import { signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -13,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser'
 
 
 interface User {
@@ -27,6 +27,7 @@ interface DashboardNavProps {
 
 export function DashboardNav({ user }: DashboardNavProps) {
   const pathname = usePathname();
+  const supabase = getSupabaseBrowserClient()
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background">
@@ -84,7 +85,10 @@ export function DashboardNav({ user }: DashboardNavProps) {
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="cursor-pointer"
-                onClick={() => signOut({ callbackUrl: '/' })}
+                onClick={async () => {
+                  await supabase.auth.signOut()
+                  window.location.href = '/'
+                }}
               >
                 Log out
               </DropdownMenuItem>

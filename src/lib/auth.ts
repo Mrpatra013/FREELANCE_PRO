@@ -1,22 +1,30 @@
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth-options';
-import { redirect } from 'next/navigation';
+import { redirect } from 'next/navigation'
+import { getSupabaseServerClient } from '@/lib/supabase/server'
 
 export async function getSession() {
-  return await getServerSession(authOptions);
+  const supabase = await getSupabaseServerClient()
+  const { data, error } = await supabase.auth.getUser()
+  if (error) return null
+  return data
 }
 
 export async function getCurrentUser() {
-  const session = await getSession();
-  return session?.user;
+  const session = await getSession()
+  const email = session?.user?.email
+  if (!email) return null
+
+  // Map Supabase user to local Prisma user record
+  const { prisma } = await import('@/lib/prisma')
+  const user = await prisma.user.findUnique({ where: { email } })
+  return user
 }
 
 export async function requireAuth() {
-  const user = await getCurrentUser();
-  
+  const user = await getCurrentUser()
+
   if (!user) {
-    redirect('/login');
+    redirect('/login')
   }
-  
-  return user;
+
+  return user
 }

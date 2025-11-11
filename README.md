@@ -249,6 +249,43 @@ freelancepro/
 
 ## Deployment
 
+---
+
+## Next.js + Supabase — Minimal Env and Client Setup
+
+- Environment uses exactly three variables in `.env.local`:
+  - `NEXT_PUBLIC_SUPABASE_URL` — Supabase Project URL (public).
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase anon key (public).
+  - `SUPABASE_SERVICE_ROLE_KEY` — Service role key (server-only).
+- Install packages: `@supabase/supabase-js` and `@supabase/ssr` (already added).
+- Client architecture:
+  - Browser client: `src/lib/supabase/browser.ts` using `createBrowserClient`.
+  - Server client: `src/lib/supabase/server.ts` using `createServerClient` and cookies.
+  - Admin client: `src/lib/supabase/admin.ts` using service role key.
+- Minimal `.env.local` example:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL="https://YOUR_PROJECT_REF.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="YOUR_ANON_PUBLIC_KEY"
+SUPABASE_SERVICE_ROLE_KEY="YOUR_SERVICE_ROLE_KEY"
+```
+
+### Middleware (Auth wiring)
+- A stub `middleware.ts` is included to wire Supabase auth cookies for protected routes.
+- It currently does not enforce redirects to avoid breaking existing flows; extend it to guard routes once Supabase auth pages are added.
+
+### Migration Notes
+- Database and auth operations should migrate from Prisma/NextAuth to Supabase clients.
+- Replace Prisma queries in API handlers with Supabase methods (`select`, `insert`, `update`, `delete`).
+- Implement Supabase sign up/sign in/sign out using `supabase.auth` and remove NextAuth once fully migrated.
+ - A SQL schema is provided at `supabase/schema.sql`. Apply it in Supabase SQL Editor to create tables mirroring current Prisma models (users, clients, projects, invoices and enums).
+
+Refer to Supabase docs for RLS policies and SSR patterns.
+
+### Connectivity Check
+- An API route `GET /api/supabase/health` verifies connection via `auth.admin.listUsers` using the service role key.
+- If it returns `{ ok: true }`, your keys are correct and Supabase is reachable.
+
 ### Vercel (Recommended)
 
 1. Push your code to GitHub
@@ -342,4 +379,88 @@ If you encounter any issues or have questions, please:
 
 **FreelancePro** - Streamline your freelance business management.
 
+## Code Style & Conventions
+
+- Components use PascalCase; variables and functions use camelCase.
+- Keep functions focused and under ~50 lines where reasonable.
+- Prefer descriptive names over abbreviations; avoid magic numbers/strings.
+- Co-locate files by feature; separate UI from business logic.
+- Use JSDoc for public functions and complex handlers.
+
+## Structure Updates
+
+- Added `src/config/constants.ts` for shared enums and defaults.
+- Added `src/components/ui/index.ts` to enable clean UI imports.
+- Added `src/utils/index.ts` to re-export common libs and helpers.
+- Added `.editorconfig`, `.prettierrc.json`, and `.vscode/settings.json` for consistent formatting.
+- No feature changes; all updates are structural and documentation-only.
+
+## Editor & Formatting
+
+- Prettier is the default formatter with format-on-save enabled.
+- LF line endings, UTF-8 charset, 2-space indentation across the project.
+- Prettier ignores build artifacts and generated files (`.next`, `node_modules`, `prisma/dev.db`).
+
+## Architecture Overview
+
+- Next.js App Router with server components for data fetching.
+- NextAuth for authentication and session management.
+- Prisma ORM with SQLite in development; PostgreSQL recommended for production.
+- Shadcn/UI for accessible, composable UI primitives.
+- Zod for validation; structured error handling in API routes.
+
+## Quality Checklist
+
+- All pages load without errors; UX remains unchanged.
+- Imports resolve cleanly via barrel files; no duplication.
+- Constants centralize repeated strings and default values.
+- JSDoc and comments present where logic is non-trivial.
+- Codebase is consistently formatted and easy to navigate.
+
 # FREELANCE_PRO
+## Supabase Postgres Setup
+
+Use Supabase’s managed Postgres with Prisma so your app stays in sync.
+
+1) Get your connection string
+- Go to Supabase → Project Settings → Database → Connection string.
+- Prefer the Direct connection for Prisma (db.YOUR_REF.supabase.co:5432).
+- If you must use the Pooled connection (PgBouncer), add `pgbouncer=true` and `connection_limit=1`.
+
+2) Set environment variables
+- Create `.env.local` from `.env.example` and update:
+  - `DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@db.YOUR_REF.supabase.co:5432/postgres?schema=public&sslmode=require"`
+  - `NEXTAUTH_SECRET` with a secure random string.
+
+3) Switch Prisma to Postgres
+- Ensure `prisma/schema.prisma` datasource is set to `provider = "postgresql"` and uses `env("DATABASE_URL")`.
+
+4) Apply Prisma schema to Supabase
+- If you have migrations in `prisma/migrations`, run:
+  - `npx prisma migrate deploy`
+- If this is a new DB or you used `db push` before:
+  - `npx prisma db push` (non-destructive) then create future changes with migrations.
+
+5) Generate Prisma client
+- `npx prisma generate`
+
+6) Verify locally
+- Start the app: `npm run dev`
+- Create a client/project and confirm data appears in Supabase.
+
+Notes
+- Supabase requires SSL; keep `sslmode=require` in `DATABASE_URL`.
+- For PgBouncer pooled connections, use the pooled URL and include `pgbouncer=true&connection_limit=1`.
+- If your DB already has tables, run `npx prisma db pull` to sync your Prisma schema to what exists.
+
+### Minimal `.env.local`
+
+For a clean environment file focused on Supabase, keep only:
+
+```env
+DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@db.YOUR_REF.supabase.co:5432/postgres?schema=public&sslmode=require"
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="your-secure-random-string"
+```
+
+Optional OAuth providers (Google/GitHub, etc.) can be added later as needed, but are not required for basic credentials-based auth.

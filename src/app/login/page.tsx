@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,9 +10,11 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ButtonLoading } from '@/components/ui/loading';
 import { toast } from 'sonner';
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
 export default function LoginPage() {
   const router = useRouter();
+  const search = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -29,50 +31,27 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      console.log('🔐 Starting login process...');
-      console.log('📧 Email:', formData.email);
-      console.log('🔑 Password length:', formData.password.length);
-      
-      // Test CSRF token first
-      const csrfResponse = await fetch('/api/auth/csrf');
-      const csrfData = await csrfResponse.json();
-      console.log('🛡️ CSRF Token obtained:', csrfData.csrfToken ? 'Yes' : 'No');
-      
-      const result = await signIn('credentials', {
+      const supabase = getSupabaseBrowserClient();
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
-        redirect: false,
-        callbackUrl: '/dashboard'
       });
 
-      console.log('📊 Full login result:', JSON.stringify(result, null, 2));
-
-      if (result?.error) {
-        console.error('❌ Login failed with error:', result.error);
-        toast.error(`Login failed: ${result.error}`);
+      if (error) {
+        console.error('❌ Login failed with error:', error.message);
+        toast.error(`Login failed: ${error.message}`);
         return;
       }
 
-      if (result?.ok) {
-        console.log('✅ Login successful!');
-        
-        // Check session immediately after login
-        const sessionResponse = await fetch('/api/auth/session');
-        const sessionData = await sessionResponse.json();
-        console.log('🔍 Session check after login:', sessionData);
-        
+      if (data.session) {
         toast.success('Login successful!');
-        
-        // Small delay to ensure session is set
-        setTimeout(() => {
-          console.log('🔄 Redirecting to dashboard...');
-          router.push('/dashboard');
-          router.refresh();
-        }, 500);
-      } else {
-        console.warn('⚠️ Login result unclear:', result);
-        toast.error('Login result unclear. Please try again.');
+        const redirectTo = search.get('redirectTo') ?? '/dashboard';
+        router.push(redirectTo);
+        router.refresh();
+        return;
       }
+
+      toast.error('Login result unclear. Please try again.');
     } catch (error) {
       console.error('💥 Login error:', error);
       toast.error('Something went wrong. Please try again.');

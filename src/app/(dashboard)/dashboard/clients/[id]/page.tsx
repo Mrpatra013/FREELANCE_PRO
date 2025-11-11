@@ -1,6 +1,5 @@
 import { Metadata } from 'next';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-options';
+import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
 import { notFound, redirect } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -28,14 +27,15 @@ type ClientWithProjects = Prisma.ClientGetPayload<{
 
 export default async function ClientDetailPage({ params }: Props) {
   const { id } = await params;
-  const session = await getServerSession(authOptions);
+  const supabase = await getSupabaseServerClient();
+  const { data, error } = await supabase.auth.getUser();
   
-  if (!session?.user?.email) {
+  if (error || !data?.user?.email) {
     redirect('/login');
   }
 
   const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
+    where: { email: data.user.email },
   });
 
   if (!user) {
@@ -76,7 +76,7 @@ export default async function ClientDetailPage({ params }: Props) {
             </p>
           </div>
         </div>
-        <Link href={`/clients/${client.id}/edit`}>
+        <Link href={`/dashboard/clients/${client.id}/edit`}>
           <Button>Edit Client</Button>
         </Link>
       </div>

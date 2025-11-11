@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useDeferredValue, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -49,6 +49,7 @@ export default function ProjectsPage() {
   const [clientFilter, setClientFilter] = useState('all');
   const [rateTypeFilter, setRateTypeFilter] = useState('all');
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
+  const deferredSearch = useDeferredValue(searchQuery);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -69,53 +70,53 @@ export default function ProjectsPage() {
   // Apply filters whenever dependencies change
   useEffect(() => {
     let result = [...projects];
-    
-    // Filter by status tab
+
     if (activeTab !== 'all') {
       result = result.filter(project => project.status === activeTab.toUpperCase());
     }
-    
-    // Filter by search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(project => 
-        project.name.toLowerCase().includes(query) || 
+
+    if (deferredSearch) {
+      const query = deferredSearch.toLowerCase();
+      result = result.filter(project =>
+        project.name.toLowerCase().includes(query) ||
         project.client.name.toLowerCase().includes(query) ||
         (project.description && project.description.toLowerCase().includes(query))
       );
     }
-    
-    // Filter by client
+
     if (clientFilter !== 'all') {
       result = result.filter(project => project.client.id === clientFilter);
     }
-    
-    // Filter by rate type
+
     if (rateTypeFilter !== 'all') {
       result = result.filter(project => project.rateType === rateTypeFilter.toUpperCase());
     }
-    
+
     setFilteredProjects(result);
-  }, [projects, activeTab, searchQuery, clientFilter, rateTypeFilter]);
+  }, [projects, activeTab, deferredSearch, clientFilter, rateTypeFilter]);
 
   const fetchData = async () => {
     setIsLoading(true);
+    const controller = new AbortController();
     try {
       const [projectsRes, clientsRes] = await Promise.all([
-        fetch('/api/projects'),
-        fetch('/api/clients')
+        fetch('/api/projects', { signal: controller.signal }),
+        fetch('/api/clients', { signal: controller.signal })
       ]);
 
       if (!projectsRes.ok || !clientsRes.ok) {
         throw new Error('Failed to fetch data');
       }
 
-      const projectsData = await projectsRes.json();
-      const clientsData = await clientsRes.json();
+      const [projectsData, clientsData] = await Promise.all([
+        projectsRes.json(),
+        clientsRes.json()
+      ]);
 
       setProjects(projectsData);
       setClients(clientsData);
     } catch (error) {
+      if ((error as any)?.name === 'AbortError') return;
       console.error('Error fetching data:', error);
       toast.error('Failed to load projects data');
     } finally {
@@ -290,17 +291,19 @@ export default function ProjectsPage() {
   });
   
   // Get recently updated projects
-  const recentProjects = [...projects]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 5);
+  const recentProjects = useMemo(() => {
+    return [...projects]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 5);
+  }, [projects]);
 
   // Count projects by status for tab indicators
-  const projectCounts = {
+  const projectCounts = useMemo(() => ({
     all: projects.length,
     active: projects.filter(p => p.status === 'ACTIVE').length,
     completed: projects.filter(p => p.status === 'COMPLETED').length,
     paused: projects.filter(p => p.status === 'PAUSED').length
-  };
+  }), [projects]);
 
   return (
     <div className="container mx-auto py-6 space-y-6">

@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { PROJECT_STATUS, DEFAULT_PROJECT_STATUS } from '@/config/constants';
 
+/**
+ * Get a single project by ID for the authenticated user.
+ * Includes full client details.
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -58,6 +63,10 @@ export async function GET(
   }
 }
 
+/**
+ * Update an existing project by ID for the authenticated user.
+ * Validates required fields and client ownership.
+ */
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -124,7 +133,7 @@ export async function PUT(
         rateType,
         startDate: new Date(startDate),
         deadline: deadline ? new Date(deadline) : null,
-        status: status || 'ACTIVE',
+        status: status || DEFAULT_PROJECT_STATUS,
         clientId,
       },
       include: {
@@ -148,6 +157,10 @@ export async function PUT(
   }
 }
 
+/**
+ * Set the status of an existing project.
+ * Allows only ACTIVE, COMPLETED, or PAUSED.
+ */
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -179,7 +192,11 @@ export async function PATCH(
     }
 
     // Validate status value
-    if (!['ACTIVE', 'COMPLETED', 'PAUSED'].includes(status)) {
+    if (![
+      PROJECT_STATUS.ACTIVE,
+      PROJECT_STATUS.COMPLETED,
+      PROJECT_STATUS.PAUSED,
+    ].includes(status)) {
       return NextResponse.json(
         { error: 'Invalid status value' },
         { status: 400 }

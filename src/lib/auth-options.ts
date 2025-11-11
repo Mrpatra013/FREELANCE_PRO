@@ -11,6 +11,10 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' }
       },
+      /**
+       * Authorize a user via email/password.
+       * Returns a minimal user object on success or null on failure.
+       */
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           return null;
@@ -50,12 +54,18 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   debug: false,
   callbacks: {
+    /**
+     * Attach user id to the JWT token when available.
+     */
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
       }
       return token;
     },
+    /**
+     * Attach user id from token to the session object.
+     */
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id as string;

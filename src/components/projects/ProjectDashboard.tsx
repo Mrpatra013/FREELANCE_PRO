@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { ProjectStats } from './ProjectStats';
 import { ProjectList } from './ProjectList';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -37,30 +37,36 @@ export function ProjectDashboard() {
   
   // Fetch projects and clients data
   useEffect(() => {
+    const controller = new AbortController();
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch projects
-        const projectsResponse = await fetch('/api/projects');
+        const [projectsResponse, clientsResponse] = await Promise.all([
+          fetch('/api/projects', { signal: controller.signal }),
+          fetch('/api/clients', { signal: controller.signal }),
+        ]);
+
         if (!projectsResponse.ok) throw new Error('Failed to fetch projects');
-        const projectsData = await projectsResponse.json();
-        
-        // Fetch clients
-        const clientsResponse = await fetch('/api/clients');
         if (!clientsResponse.ok) throw new Error('Failed to fetch clients');
-        const clientsData = await clientsResponse.json();
-        
+
+        const [projectsData, clientsData] = await Promise.all([
+          projectsResponse.json(),
+          clientsResponse.json(),
+        ]);
+
         setProjects(projectsData);
         setClients(clientsData);
-      } catch (error) {
+      } catch (error: any) {
+        if (controller.signal.aborted) return;
         console.error('Error fetching data:', error);
         toast.error('Failed to load dashboard data');
       } finally {
-        setIsLoading(false);
+        if (!controller.signal.aborted) setIsLoading(false);
       }
     };
-    
+
     fetchData();
+    return () => controller.abort();
   }, []);
   
   // Handle project status change
@@ -122,9 +128,11 @@ export function ProjectDashboard() {
   });
   
   // Get recently updated projects
-  const recentProjects = [...projects]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 5);
+  const recentProjects = useMemo(() => {
+    return [...projects]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 5);
+  }, [projects]);
 
   return (
     <div className="space-y-8">

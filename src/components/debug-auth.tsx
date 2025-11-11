@@ -1,6 +1,6 @@
 'use client';
 
-import { useSession, signIn, signOut } from 'next-auth/react';
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 
 export function DebugAuth() {
-  const { data: session, status, update } = useSession();
+  const supabase = getSupabaseBrowserClient();
+  const [supabaseUser, setSupabaseUser] = useState<any>(null);
+  const [supabaseSession, setSupabaseSession] = useState<any>(null);
   const [credentials, setCredentials] = useState({
     email: 'test@example.com',
     password: 'password123'
@@ -23,11 +25,32 @@ export function DebugAuth() {
   };
 
   useEffect(() => {
-    addLog(`Session status: ${status}`);
-    if (session) {
-      addLog(`Session user: ${session.user?.email} (ID: ${session.user?.id})`);
-    }
-  }, [session, status]);
+    // Initial load
+    (async () => {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (userError) addLog(`getUser error: ${userError.message}`);
+      if (sessionError) addLog(`getSession error: ${sessionError.message}`);
+      setSupabaseUser(userData.user);
+      setSupabaseSession(sessionData.session);
+      addLog(`Initial auth state: ${sessionData.session ? 'authenticated' : 'unauthenticated'}`);
+      if (userData.user) {
+        addLog(`User: ${userData.user.email} (ID: ${userData.user.id})`);
+      }
+    })();
+
+    // Subscribe to auth state changes
+    const { data: subscription } = supabase.auth.onAuthStateChange(async (event, session) => {
+      addLog(`Auth event: ${event}`);
+      setSupabaseSession(session);
+      const { data: userData } = await supabase.auth.getUser();
+      setSupabaseUser(userData.user);
+    });
+
+    return () => {
+      subscription?.subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   const handleLogin = async () => {
     setIsLoading(true);
@@ -35,26 +58,20 @@ export function DebugAuth() {
     
     try {
       addLog(`Attempting login with: ${credentials.email}`);
-      
-      const result = await signIn('credentials', {
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password,
-        redirect: false
       });
 
-      addLog(`Login result: ${JSON.stringify(result)}`);
-
-      if (result?.error) {
-        addLog(`Login error: ${result.error}`);
-        toast.error(`Login failed: ${result.error}`);
-      } else if (result?.ok) {
+      if (error) {
+        addLog(`Login error: ${error.message}`);
+        toast.error(`Login failed: ${error.message}`);
+      } else {
         addLog('Login successful!');
         toast.success('Login successful!');
-        // Force session update
-        await update();
-      } else {
-        addLog('Login result unclear');
-        toast.error('Login result unclear');
+        setSupabaseSession(data.session);
+        const { data: userData } = await supabase.auth.getUser();
+        setSupabaseUser(userData.user);
       }
     } catch (error) {
       addLog(`Login exception: ${error}`);
@@ -68,7 +85,14 @@ export function DebugAuth() {
   const handleLogout = async () => {
     addLog('Starting logout...');
     try {
-      await signOut({ redirect: false });
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        addLog(`Logout error: ${error.message}`);
+        toast.error('Logout failed');
+        return;
+      }
+      setSupabaseUser(null);
+      setSupabaseSession(null);
       addLog('Logout successful');
       toast.success('Logged out successfully');
     } catch (error) {
@@ -147,9 +171,12 @@ export function DebugAuth() {
   const checkSession = async () => {
     addLog('Checking session manually...');
     try {
-      const response = await fetch('/api/auth/session');
-      const sessionData = await response.json();
-      addLog(`Manual session check: ${JSON.stringify(sessionData)}`);
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        addLog(`Session error: ${error.message}`);
+      } else {
+        addLog(`Manual session: ${JSON.stringify({ user: supabaseUser?.email, expires_at: data.session?.expires_at })}`);
+      }
     } catch (error) {
       addLog(`Session check error: ${error}`);
     }
@@ -164,12 +191,12 @@ export function DebugAuth() {
         <CardContent className="space-y-4">
           <div>
             <h3 className="font-semibold mb-2">Current Session:</h3>
-            <p>Status: <span className="font-mono">{status}</span></p>
-            {session ? (
+            <p>Status: <span className="font-mono">{supabaseSession ? 'authenticated' : 'unauthenticated'}</span></p>
+            {supabaseSession ? (
               <div className="space-y-1">
-                <p>Email: <span className="font-mono">{session.user?.email}</span></p>
-                <p>ID: <span className="font-mono">{session.user?.id}</span></p>
-                <p>Expires: <span className="font-mono">{session.expires}</span></p>
+                <p>Email: <span className="font-mono">{supabaseUser?.email}</span></p>
+                <p>ID: <span className="font-mono">{supabaseUser?.id}</span></p>
+                <p>Expires at: <span className="font-mono">{supabaseSession?.expires_at ?? 'n/a'}</span></p>
               </div>
             ) : (
               <p className="text-muted-foreground">No active session</p>

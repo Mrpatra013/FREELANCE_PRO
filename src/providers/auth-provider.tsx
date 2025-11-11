@@ -1,20 +1,13 @@
-'use client';
+'use client'
 
-import { SessionProvider } from 'next-auth/react';
-import { ReactNode } from 'react';
+import { ReactNode } from 'react'
 
 interface AuthProviderProps {
   children: ReactNode;
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  return (
-    <SessionProvider
-      basePath="/api/auth"
-      refetchInterval={0}
-      refetchOnWindowFocus={false}
-    >
-      {children}
-    </SessionProvider>
-  );
+  // Supabase does not require a global provider for session in App Router.
+  // Cookies are managed via middleware and the SSR helpers.
+  return children as any
 }

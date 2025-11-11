@@ -1,0 +1,22 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "files.eol": "\n",
+  "editor.tabSize": 2,
+  "typescript.preferences.importModuleSpecifier": "shortest",
+  "javascript.preferences.importModuleSpecifier": "shortest",
+  "eslint.useFlatConfig": true,
+  "eslint.validate": ["typescript", "javascript", "javascriptreact", "typescriptreact"],
+  "eslint.format.enable": true,
+  "terminal.integrated.profiles.windows": {
+    "WSL zsh": {
+      "path": "C\\\\Windows\\\\System32\\\\wsl.exe",
+      "args": ["--distribution", "Ubuntu", "--exec", "/usr/bin/zsh", "-l"]
+    },
+    "Git Bash": {
+      "path": "C:\\\\Program Files\\\\Git\\\\bin\\\\bash.exe",
+      "args": ["-l"]
+    }
+  },
+  "terminal.integrated.defaultProfile.windows": "WSL zsh"
+}

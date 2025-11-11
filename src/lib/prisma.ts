@@ -4,6 +4,10 @@ import { PrismaClient } from '@prisma/client';
 // exhausting your database connection limit.
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
+/**
+ * Prisma Client singleton for server-side database access.
+ * In development, attaches to global to avoid creating multiple instances.
+ */
 export const prisma =
   globalForPrisma.prisma ||
   new PrismaClient({
