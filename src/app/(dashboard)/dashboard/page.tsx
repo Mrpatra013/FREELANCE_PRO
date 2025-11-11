@@ -111,11 +111,7 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <div className="flex items-center space-x-2">
-          <Link href="/projects/new">
-            <Button>New Project</Button>
-          </Link>
-        </div>
+        {/* Removed New Project button as requested */}
       </div>
 
       {/* Earnings Overview Cards */}
@@ -186,7 +182,7 @@ export default async function DashboardPage() {
                   </div>
                   <div className="text-right">
                     <div className="text-sm font-medium text-red-600">
-                      ${Number(invoice.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {Number(invoice.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {invoice.status}
@@ -199,7 +195,7 @@ export default async function DashboardPage() {
           {unpaidInvoices.length > 0 && (
             <div className="mt-4 flex justify-between items-center">
               <div className="text-sm text-muted-foreground">
-                Total outstanding: ${unpaidInvoices.reduce((sum: number, inv: any) => sum + Number(inv.amount), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                Total outstanding: {unpaidInvoices.reduce((sum: number, inv: any) => sum + Number(inv.amount), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
               <Link href="/invoices">
                 <Button variant="outline" size="sm">

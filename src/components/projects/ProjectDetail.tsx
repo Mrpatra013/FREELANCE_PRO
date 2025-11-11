@@ -31,7 +31,6 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -588,15 +587,15 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
       <div className="flex flex-col space-y-2 sm:flex-row sm:justify-between sm:items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
-          <div className="flex items-center space-x-2 mt-2">
-            <ProjectStatusBadge status={project.status} />
-            {isOverdue() && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                <AlertTriangle className="mr-1 h-3 w-3" />
-                Overdue
-              </span>
-            )}
-          </div>
+        </div>
+        <div className="flex items-center gap-2 sm:mt-0">
+          <ProjectStatusBadge status={project.status} />
+          {isOverdue() && (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+              <AlertTriangle className="mr-1 h-3 w-3" />
+              Overdue
+            </span>
+          )}
         </div>
       </div>
 
@@ -605,9 +604,9 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
         {/* Project details */}
         <Card className="md:col-span-2">
           <CardHeader>
-            <CardTitle>Project Details</CardTitle>
+            <CardTitle className="text-2xl font-extrabold">Project Details</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {project.description && (
               <div className="space-y-2">
                 <h3 className="text-sm font-medium text-muted-foreground">Description</h3>
@@ -621,7 +620,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
                 <div className="flex items-center">
                   <DollarSign className="mr-2 h-4 w-4 text-muted-foreground" />
                   <span>
-                    ${Number(project.rate).toFixed(2)} {project.rateType === 'HOURLY' ? 'per hour' : 'fixed'}
+                    {Number(project.rate).toFixed(2)} {project.rateType === 'HOURLY' ? 'per hour' : 'fixed'}
                   </span>
                 </div>
               </div>
@@ -631,36 +630,26 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
                 <div className="flex items-center">
                   <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
                   <span>
-                    {format(new Date(project.startDate), 'MMM d, yyyy')}
+                    {format(new Date(project.startDate), 'dd/MM/yyyy')}
                     {project.deadline && (
-                      <> - {format(new Date(project.deadline), 'MMM d, yyyy')}</>
+                      <> - {format(new Date(project.deadline), 'dd/MM/yyyy')}</>
                     )}
                   </span>
                 </div>
               </div>
             </div>
             
-            {project.deadline && (
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <h3 className="text-sm font-medium text-muted-foreground">Progress</h3>
-                  <span className="text-sm">{stats.progress}%</span>
-                </div>
-                <Progress value={stats.progress} className="h-2" />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>{stats.daysActive} days active</span>
-                  {stats.daysLeft > 0 ? (
-                    <span>{stats.daysLeft} days left</span>
-                  ) : (
-                    <span className="text-red-500">Deadline passed</span>
-                  )}
-                </div>
-              </div>
-            )}
+            {/* Progress section removed as requested */}
             
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <Card>
-                <CardContent className="pt-6">
+            <div
+              className="grid grid-cols-2 sm:grid-cols-4 gap-4"
+              style={{ marginTop: 'auto', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', alignItems: 'stretch' }}
+            >
+              <Card style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <CardContent
+                  className="pt-6"
+                  style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', flexGrow: 1 }}
+                >
                   <div className="text-center">
                     <Clock className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
                     <p className="text-xs text-muted-foreground">Days Active</p>
@@ -669,8 +658,11 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
                 </CardContent>
               </Card>
               
-              <Card>
-                <CardContent className="pt-6">
+              <Card style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <CardContent
+                  className="pt-6"
+                  style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', flexGrow: 1 }}
+                >
                   <div className="text-center">
                     <FileSpreadsheet className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
                     <p className="text-xs text-muted-foreground">Invoices</p>
@@ -681,12 +673,15 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
               
 
               
-              <Card>
-                <CardContent className="pt-6">
+              <Card style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <CardContent
+                  className="pt-6"
+                  style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', flexGrow: 1 }}
+                >
                   <div className="text-center">
                     <DollarSign className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
                     <p className="text-xs text-muted-foreground">Net Earnings</p>
-                    <p className="text-2xl font-bold">${Number(stats.netEarnings).toFixed(2)}</p>
+                    <p className="text-2xl font-bold">{Number(stats.netEarnings).toFixed(2)}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -900,7 +895,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
                               <CalendarIcon className="mr-1 h-3 w-3" />
                               {format(new Date(invoice.dueDate), 'MMM d, yyyy')}
                             </div>
-                            <div className="font-medium">${Number(invoice.amount).toFixed(2)}</div>
+                            <div className="font-medium">{Number(invoice.amount).toFixed(2)}</div>
                           </div>
                         </div>
                       </div>

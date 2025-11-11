@@ -120,3 +120,15 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Hover behavior: make caret and placeholder text black on inputs/textarea */
+input:hover,
+textarea:hover {
+  caret-color: #000000;
+}
+
+input:hover::placeholder,
+textarea:hover::placeholder {
+  color: #000000;
+  opacity: 1; /* ensure full contrast */
+}

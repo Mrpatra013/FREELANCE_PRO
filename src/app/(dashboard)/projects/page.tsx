@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import Link from 'next/link';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CalendarIcon, Clock, AlertTriangle, Plus, Search, Filter, Edit, Trash2 } from 'lucide-react';
@@ -16,6 +17,7 @@ import { ProjectStatusBadge } from '@/components/projects/ProjectStatusBadge';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { toast } from 'sonner';
 import { DeleteConfirmationModal } from '@/components/clients/DeleteConfirmationModal';
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
 interface Client {
   id: string;
@@ -39,6 +41,7 @@ interface Project {
 }
 
 export default function ProjectsPage() {
+  const supabase = getSupabaseBrowserClient();
   const [projects, setProjects] = useState<Project[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -50,6 +53,8 @@ export default function ProjectsPage() {
   const [rateTypeFilter, setRateTypeFilter] = useState('all');
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const deferredSearch = useDeferredValue(searchQuery);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -64,15 +69,43 @@ export default function ProjectsPage() {
 
   // Fetch projects and clients data
   useEffect(() => {
-    fetchData();
-  }, []);
+    const controller = new AbortController();
+    let mounted = true;
+    (async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (!mounted) return;
+      const authed = !error && !!data?.user;
+      setIsAuthenticated(authed);
+      setAuthChecked(true);
+      if (authed) {
+        try {
+          await fetch('/api/user/sync', { method: 'POST', signal: controller.signal });
+        } catch (e) {
+          if ((e as any)?.name !== 'AbortError') {
+            console.error('User sync failed:', e);
+          }
+        }
+        await fetchData(controller.signal);
+      } else {
+        setIsLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+      controller.abort();
+    };
+  }, [supabase]);
 
   // Apply filters whenever dependencies change
   useEffect(() => {
     let result = [...projects];
 
+    // Normalize status for robust filtering regardless of casing
     if (activeTab !== 'all') {
-      result = result.filter(project => project.status === activeTab.toUpperCase());
+      result = result.filter(project => {
+        const status = typeof project.status === 'string' ? project.status.toLowerCase() : String(project.status).toLowerCase();
+        return status === activeTab;
+      });
     }
 
     if (deferredSearch) {
@@ -95,13 +128,12 @@ export default function ProjectsPage() {
     setFilteredProjects(result);
   }, [projects, activeTab, deferredSearch, clientFilter, rateTypeFilter]);
 
-  const fetchData = async () => {
+  const fetchData = async (signal?: AbortSignal) => {
     setIsLoading(true);
-    const controller = new AbortController();
     try {
       const [projectsRes, clientsRes] = await Promise.all([
-        fetch('/api/projects', { signal: controller.signal }),
-        fetch('/api/clients', { signal: controller.signal })
+        fetch('/api/projects', { signal }),
+        fetch('/api/clients', { signal })
       ]);
 
       if (!projectsRes.ok || !clientsRes.ok) {
@@ -256,15 +288,18 @@ export default function ProjectsPage() {
   const recentProjects = useMemo(() => {
     return [...projects]
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, 5);
+      .slice(0, 3);
   }, [projects]);
 
-  const projectCounts = useMemo(() => ({
-    all: projects.length,
-    active: projects.filter(p => p.status === 'ACTIVE').length,
-    completed: projects.filter(p => p.status === 'COMPLETED').length,
-    paused: projects.filter(p => p.status === 'PAUSED').length
-  }), [projects]);
+  const projectCounts = useMemo(() => {
+    const normalize = (s: any) => (typeof s === 'string' ? s.toUpperCase() : String(s).toUpperCase());
+    return {
+      all: projects.length,
+      active: projects.filter(p => normalize(p.status) === 'ACTIVE').length,
+      completed: projects.filter(p => normalize(p.status) === 'COMPLETED').length,
+      paused: projects.filter(p => normalize(p.status) === 'PAUSED').length,
+    };
+  }, [projects]);
 
   // Calculate project statistics
   const activeCount = projects.filter(p => p.status === 'ACTIVE').length;
@@ -500,36 +535,22 @@ export default function ProjectsPage() {
               No projects found. Create your first project to get started.
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-2">
               {recentProjects.map((project) => (
-                <div key={project.id} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
+                <Link key={project.id} href={`/projects/${project.id}`} className="flex items-center justify-between rounded-md border px-3 py-3 hover:bg-muted/30 transition-colors">
                   <div className="space-y-1">
-                    <div className="font-medium">{project.name}</div>
-                    <div className="text-sm text-muted-foreground">{project.client.name}</div>
-                    <div className="flex items-center space-x-2">
-                      <ProjectStatusBadge status={project.status} />
-                      {project.deadline && isBefore(new Date(project.deadline), today) && project.status === 'ACTIVE' && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                          <AlertTriangle className="mr-1 h-3 w-3" />
-                          Overdue
-                        </span>
-                      )}
-                    </div>
+                    <div className="font-medium truncate">{project.name}</div>
                   </div>
-                  <div className="text-sm text-right">
-                    {project.deadline ? (
-                      <div className="flex items-center justify-end text-muted-foreground">
-                        <CalendarIcon className="h-3 w-3 mr-1" />
-                        Due {format(new Date(project.deadline), 'MMM d, yyyy')}
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-end text-muted-foreground">
-                        <Clock className="h-3 w-3 mr-1" />
-                        Started {format(new Date(project.startDate), 'MMM d, yyyy')}
-                      </div>
+                  <div className="flex items-center gap-2">
+                    <ProjectStatusBadge status={project.status} />
+                    {project.deadline && isBefore(new Date(project.deadline), today) && project.status === 'ACTIVE' && (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <AlertTriangle className="mr-1 h-3 w-3" />
+                        Overdue
+                      </span>
                     )}
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}

@@ -96,7 +96,7 @@ export function ProjectCard({ project, onStatusChange, onEdit, onDelete }: Proje
             <div className="flex items-center text-sm">
               <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
               <span>
-                {project.rate.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                {Number(project.rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 {project.rateType === 'HOURLY' ? '/hr' : ' total'}
               </span>
             </div>

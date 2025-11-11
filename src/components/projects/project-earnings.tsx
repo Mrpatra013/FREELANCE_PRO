@@ -209,7 +209,7 @@ export function ProjectEarnings({ projectId }: ProjectEarningsProps) {
         {/* Invoice Status Breakdown */}
         <div className="space-y-3">
           <h3 className="text-sm font-medium">Invoice Status</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 gap-y-2 gap-x-[100px] place-items-center w-fit mx-auto">
             {Object.entries(earnings.statusBreakdown).map(([status, count]) => (
               <div key={status} className="text-center">
                 <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>

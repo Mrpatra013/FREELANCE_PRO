@@ -391,7 +391,7 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
           {/* Amount */}
           <div className="flex justify-between items-center text-xl font-bold">
             <span>Total Amount:</span>
-            <span>${Number(invoice.amount).toFixed(2)}</span>
+            <span>{Number(invoice.amount).toFixed(2)}</span>
           </div>
         </CardContent>
       </Card>

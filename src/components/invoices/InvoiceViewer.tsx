@@ -211,9 +211,9 @@ const InvoiceViewer = ({ invoice }: InvoiceViewerProps) => {
           <h3 className="text-lg font-semibold mb-4 text-gray-600">PROJECT DETAILS:</h3>
           <p><strong>Project:</strong> {invoice.project?.name || 'Project Name'}</p>
           <p><strong>Description:</strong> {invoice.description || invoice.project?.description || 'No description available'}</p>
-          <p><strong>Rate:</strong> ${invoice.project?.rate || 0}</p>
+          <p><strong>Rate:</strong> {Number(invoice.project?.rate || 0).toFixed(2)}</p>
           <div className="text-right mt-4">
-            <p className="text-2xl font-bold">Total: ${invoice.amount || 0}</p>
+            <p className="text-2xl font-bold">Total: {Number(invoice.amount || 0).toFixed(2)}</p>
           </div>
         </div>
 

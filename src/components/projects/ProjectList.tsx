@@ -47,9 +47,12 @@ export function ProjectList({ projects, clients, onStatusChange }: ProjectListPr
   useEffect(() => {
     let result = [...projects];
     
-    // Filter by status tab
+    // Filter by status tab (case-insensitive)
     if (activeTab !== 'all') {
-      result = result.filter(project => project.status === activeTab.toUpperCase());
+      result = result.filter(project => {
+        const status = typeof project.status === 'string' ? project.status.toLowerCase() : String(project.status).toLowerCase();
+        return status === activeTab;
+      });
     }
     
     // Filter by search query
@@ -78,9 +81,9 @@ export function ProjectList({ projects, clients, onStatusChange }: ProjectListPr
   // Count projects by status for tab indicators
   const projectCounts = {
     all: projects.length,
-    active: projects.filter(p => p.status === 'ACTIVE').length,
-    completed: projects.filter(p => p.status === 'COMPLETED').length,
-    paused: projects.filter(p => p.status === 'PAUSED').length
+    active: projects.filter(p => (typeof p.status === 'string' ? p.status.toUpperCase() : String(p.status).toUpperCase()) === 'ACTIVE').length,
+    completed: projects.filter(p => (typeof p.status === 'string' ? p.status.toUpperCase() : String(p.status).toUpperCase()) === 'COMPLETED').length,
+    paused: projects.filter(p => (typeof p.status === 'string' ? p.status.toUpperCase() : String(p.status).toUpperCase()) === 'PAUSED').length,
   };
   
   // Handle bulk status change

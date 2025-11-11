@@ -47,7 +47,7 @@ export function ProjectsOverview({ projects, activeCount, completedCount }: Proj
   // Get recently updated projects
   const recentProjects = [...projects]
     .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
-    .slice(0, 5);
+    .slice(0, 3);
   
   return (
     <div className="space-y-4">
@@ -112,36 +112,22 @@ export function ProjectsOverview({ projects, activeCount, completedCount }: Proj
               No projects found. Create your first project to get started.
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-2">
               {recentProjects.map((project) => (
-                <div key={project.id} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
+                <Link key={project.id} href={`/projects/${project.id}`} className="flex items-center justify-between rounded-md border px-3 py-3 hover:bg-muted/30 transition-colors">
                   <div className="space-y-1">
-                    <div className="font-medium">{project.name}</div>
-                    <div className="text-sm text-muted-foreground">{project.client.name}</div>
-                    <div className="flex items-center space-x-2">
-                      <ProjectStatusBadge status={project.status} />
-                      {project.deadline && isBefore(new Date(project.deadline), today) && project.status === 'ACTIVE' && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                          <AlertTriangle className="mr-1 h-3 w-3" />
-                          Overdue
-                        </span>
-                      )}
-                    </div>
+                    <div className="font-medium truncate">{project.name}</div>
                   </div>
-                  <div className="text-sm text-right">
-                    {project.deadline ? (
-                      <div className="flex items-center justify-end text-muted-foreground">
-                        <CalendarIcon className="h-3 w-3 mr-1" />
-                        Due {format(new Date(project.deadline), 'MMM d, yyyy')}
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-end text-muted-foreground">
-                        <Clock className="h-3 w-3 mr-1" />
-                        Started {format(new Date(project.startDate), 'MMM d, yyyy')}
-                      </div>
+                  <div className="flex items-center gap-2">
+                    <ProjectStatusBadge status={project.status} />
+                    {project.deadline && isBefore(new Date(project.deadline), today) && project.status === 'ACTIVE' && (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <AlertTriangle className="mr-1 h-3 w-3" />
+                        Overdue
+                      </span>
                     )}
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}

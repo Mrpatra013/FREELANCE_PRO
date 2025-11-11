@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, DollarSign, Calendar, Download, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, Download, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import PDFGenerator from '@/components/pdf/PDFGenerator';
 import { DeleteConfirmationModal } from '@/components/clients/DeleteConfirmationModal';
@@ -93,73 +93,92 @@ export default function InvoicesPage() {
   const [selectedInvoiceData, setSelectedInvoiceData] = useState<any>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
     let mounted = true;
     (async () => {
       const { data, error } = await supabase.auth.getUser();
       if (mounted) {
-        setIsAuthenticated(!error && !!data?.user);
+        const authed = !error && !!data?.user;
+        setIsAuthenticated(authed);
         setAuthChecked(true);
-        if (!error && data?.user) {
-          // Fetch critical data concurrently for speed
+        if (authed) {
+          try {
+            await fetch('/api/user/sync', { method: 'POST', signal: controller.signal });
+          } catch (e) {
+            if ((e as any)?.name !== 'AbortError') {
+              console.error('User sync failed:', e);
+            }
+          }
+          // Fetch critical data concurrently for speed, after ensuring local user exists
           await Promise.all([
-            fetchInvoices(),
-            fetchProjects(),
-            fetchUserBusinessInfo(),
-            fetchNextInvoiceNumber(),
+            fetchInvoices(controller.signal),
+            fetchProjects(controller.signal),
+            fetchUserBusinessInfo(controller.signal),
+            fetchNextInvoiceNumber(controller.signal),
           ]);
+        } else {
+          // Stop loading spinner if unauthenticated
+          setLoading(false);
         }
       }
     })();
-    return () => { mounted = false };
+    return () => {
+      mounted = false;
+      controller.abort();
+    };
   }, [supabase]);
   
-  const fetchNextInvoiceNumber = async () => {
+  const fetchNextInvoiceNumber = async (signal?: AbortSignal) => {
     try {
-      const response = await fetch('/api/invoices/count');
+      const response = await fetch('/api/invoices/count', { signal });
       if (response.ok) {
         const data = await response.json();
         const count = data.count;
         setNextInvoiceNumber(`INV-${String(count + 1).padStart(4, '0')}`);
       }
     } catch (error) {
+      if ((error as any)?.name === 'AbortError') return;
       console.error('Error fetching invoice count:', error);
     }
   };
 
-  const fetchUserBusinessInfo = async () => {
+  const fetchUserBusinessInfo = async (signal?: AbortSignal) => {
     try {
-      const response = await fetch('/api/user/business-info');
+      const response = await fetch('/api/user/business-info', { signal });
       if (response.ok) {
         const data = await response.json();
         setUserBusinessInfo(data);
       }
     } catch (error) {
+      if ((error as any)?.name === 'AbortError') return;
       console.error('Error fetching user business info:', error);
     }
   };
 
-  const fetchInvoices = async () => {
+  const fetchInvoices = async (signal?: AbortSignal) => {
     try {
-      const response = await fetch('/api/invoices?limit=25&page=1');
+      const response = await fetch('/api/invoices?limit=25&page=1', { signal });
       if (response.ok) {
         const data = await response.json();
         setInvoices(data);
       }
     } catch (error) {
+      if ((error as any)?.name === 'AbortError') return;
       toast.error('Failed to fetch invoices');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchProjects = async () => {
+  const fetchProjects = async (signal?: AbortSignal) => {
     try {
-      const response = await fetch('/api/projects');
+      const response = await fetch('/api/projects', { signal });
       if (response.ok) {
         const data = await response.json();
         setProjects(data);
       }
     } catch (error) {
+      if ((error as any)?.name === 'AbortError') return;
       toast.error('Failed to fetch projects');
     }
   };
@@ -359,13 +378,13 @@ export default function InvoicesPage() {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const year = date.getFullYear();
-    return `${month}/${day}/${year}`;
+    return `${day}/${month}/${year}`;
   };
 
   const formatCurrency = (amount: number) => {
     return amount.toLocaleString('en-US', {
-      style: 'currency',
-      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     });
   };
 
@@ -535,27 +554,14 @@ export default function InvoicesPage() {
                       {invoice.invoiceNumber}
                     </TableCell>
                     <TableCell>
-                      <div>
-                        <div>{invoice.project.name}</div>
-                        {invoice.description && (
-                          <div className="text-sm text-gray-500 truncate max-w-xs">
-                            {invoice.description}
-                          </div>
-                        )}
-                      </div>
+                      <div>{invoice.project.name}</div>
                     </TableCell>
                     <TableCell>{invoice.project.client.name}</TableCell>
                     <TableCell>
-                      <div className="flex items-center">
-                        <DollarSign className="mr-1 h-4 w-4" />
-                        {formatCurrency(invoice.amount)}
-                      </div>
+                      {formatCurrency(invoice.amount)}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center">
-                        <Calendar className="mr-1 h-4 w-4" />
-                        {formatDate(invoice.dueDate)}
-                      </div>
+                      {formatDate(invoice.dueDate)}
                     </TableCell>
                     <TableCell>
                       <Badge className={getStatusColor(invoice.status)}>

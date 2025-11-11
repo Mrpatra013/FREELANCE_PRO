@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { formatCurrency } from '@/lib/utils';
+// Removed currency formatting with symbol; use plain number formatting instead
 
 interface Invoice {
   id: string;
@@ -63,6 +63,21 @@ const InvoiceList = ({ invoices, onEdit, onDelete }: InvoiceListProps) => {
     router.push(`/invoices/${id}`);
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  const formatAmount = (amount: number) => {
+    return amount.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
+
   return (
     <div className="w-full overflow-auto">
       <Table>
@@ -90,13 +105,13 @@ const InvoiceList = ({ invoices, onEdit, onDelete }: InvoiceListProps) => {
                 <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
                 <TableCell>{invoice.project.name}</TableCell>
                 <TableCell>{invoice.project.client.name}</TableCell>
-                <TableCell>{formatCurrency(parseFloat(invoice.amount))}</TableCell>
+                <TableCell>{formatAmount(parseFloat(invoice.amount))}</TableCell>
                 <TableCell>
                   <Badge className={getStatusColor(invoice.status)}>
                     {invoice.status}
                   </Badge>
                 </TableCell>
-                <TableCell>{new Date(invoice.createdAt).toLocaleDateString()}</TableCell>
+                <TableCell>{formatDate(invoice.createdAt)}</TableCell>
                 <TableCell className="text-right space-x-2">
                   <Button
                     variant="outline"
