@@ -252,21 +252,19 @@ export default function ProjectsPage() {
     setIsDialogOpen(true);
   };
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto py-6 space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
-            <p className="text-muted-foreground">
-              Manage your projects and track their progress
-            </p>
-          </div>
-        </div>
-        <ProjectsSkeleton />
-      </div>
-    );
-  }
+  // Memoized computations must run every render to keep hook order stable
+  const recentProjects = useMemo(() => {
+    return [...projects]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 5);
+  }, [projects]);
+
+  const projectCounts = useMemo(() => ({
+    all: projects.length,
+    active: projects.filter(p => p.status === 'ACTIVE').length,
+    completed: projects.filter(p => p.status === 'COMPLETED').length,
+    paused: projects.filter(p => p.status === 'PAUSED').length
+  }), [projects]);
 
   // Calculate project statistics
   const activeCount = projects.filter(p => p.status === 'ACTIVE').length;
@@ -290,20 +288,22 @@ export default function ProjectsPage() {
     return isBefore(deadline, today) && project.status === 'ACTIVE';
   });
   
-  // Get recently updated projects
-  const recentProjects = useMemo(() => {
-    return [...projects]
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, 5);
-  }, [projects]);
-
-  // Count projects by status for tab indicators
-  const projectCounts = useMemo(() => ({
-    all: projects.length,
-    active: projects.filter(p => p.status === 'ACTIVE').length,
-    completed: projects.filter(p => p.status === 'COMPLETED').length,
-    paused: projects.filter(p => p.status === 'PAUSED').length
-  }), [projects]);
+  // Early return for loading state, after hooks above have run
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
+            <p className="text-muted-foreground">
+              Manage your projects and track their progress
+            </p>
+          </div>
+        </div>
+        <ProjectsSkeleton />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-6 space-y-6">
