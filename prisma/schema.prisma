@@ -1,0 +1,123 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Business information for invoice generation
+  companyName             String? @map("company_name")
+  businessEmail           String? @map("business_email")
+  phoneNumber             String? @map("phone_number")
+  businessAddress         String? @map("business_address")
+  logoUrl                 String? @map("logo_url")
+  invoiceSettingsComplete Boolean @default(false) @map("invoice_settings_complete")
+
+  // Banking information for invoices
+  bankName          String? @map("bank_name")
+  accountNumber     String? @map("account_number")
+  accountHolderName String? @map("account_holder_name")
+  ifscCode          String? @map("ifsc_code")
+  upiId             String? @map("upi_id")
+
+  clients  Client[]
+  projects Project[]
+  invoices Invoice[]
+
+  @@map("users")
+}
+
+model Client {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  name        String
+  email       String
+  company     String?
+  phone       String?
+  address     String?
+  description String?
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projects Project[]
+  invoices Invoice[]
+
+  @@map("clients")
+}
+
+enum ProjectStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+}
+
+enum RateType {
+  HOURLY
+  FIXED
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  userId      String        @map("user_id")
+  clientId    String        @map("client_id")
+  name        String
+  description String?
+  rate        Float
+  rateType    RateType      @map("rate_type")
+  startDate   DateTime      @map("start_date")
+  deadline    DateTime?
+  status      ProjectStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client   Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  invoices Invoice[]
+
+  @@map("projects")
+}
+
+enum InvoiceStatus {
+  PAID
+  UNPAID
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  userId        String        @map("user_id")
+  projectId     String        @map("project_id")
+  clientId      String        @map("client_id")
+  invoiceNumber String        @unique @map("invoice_number")
+  amount        Float
+  description   String?
+  dueDate       DateTime      @map("due_date")
+  status        InvoiceStatus @default(UNPAID)
+  createdAt     DateTime      @default(now()) @map("created_at")
+  paidAt        DateTime?     @map("paid_at")
+
+  // Freelancer business information
+  freelancerCompanyName   String? @map("freelancer_company_name")
+  freelancerBusinessEmail String? @map("freelancer_business_email")
+  freelancerLogoUrl       String? @map("freelancer_logo_url")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  client  Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@map("invoices")
+}
