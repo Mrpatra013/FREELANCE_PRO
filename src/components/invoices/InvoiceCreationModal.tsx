@@ -44,6 +44,7 @@ const InvoiceCreationModal = ({
   const [selectedProject, setSelectedProject] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<'PAID' | 'UNPAID'>('UNPAID');
   const [isCreating, setIsCreating] = useState(false);
+  const [amount, setAmount] = useState('');
 
   const createInvoice = async () => {
     if (!selectedProject) {
@@ -53,6 +54,7 @@ const InvoiceCreationModal = ({
 
     setIsCreating(true);
     try {
+      await fetch('/api/user/sync', { method: 'POST' });
       // First, generate invoice data
       const generateResponse = await fetch('/api/invoices/generate', {
         method: 'POST',
@@ -71,11 +73,18 @@ const InvoiceCreationModal = ({
       // Then create the actual invoice in the database
       console.log('Creating invoice with status:', selectedStatus);
       
+      const computedAmount = amount ? parseFloat(amount) : Number(invoiceData.project.amount);
+      if (!Number.isFinite(computedAmount) || computedAmount <= 0) {
+        toast.error('Please enter a valid positive amount');
+        setIsCreating(false);
+        return;
+      }
+
       const invoicePayload = {
         projectId: selectedProject,
-        amount: invoiceData.project.amount,
+        amount: computedAmount,
         description: `Invoice for ${invoiceData.project.name}`,
-        dueDate: invoiceData.dueDate,
+        dueDate: new Date(invoiceData.dueDate).toISOString(),
         status: selectedStatus,
         freelancerInfo: {
           companyName: invoiceData.from.businessName,
@@ -145,6 +154,19 @@ const InvoiceCreationModal = ({
               </SelectContent>
             </Select>
           </div>
+
+          <div className="space-y-2">
+              <Label htmlFor="amount">Amount *</Label>
+              <input
+                id="amount"
+                type="number"
+                step="0.01"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder="Enter amount"
+              />
+            </div>
           
           <div className="space-y-2">
               <Label htmlFor="status">Invoice Status</Label>

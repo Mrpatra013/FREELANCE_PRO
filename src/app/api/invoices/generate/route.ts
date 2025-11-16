@@ -13,20 +13,7 @@ export async function POST(request: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { email: data.user.email },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        companyName: true,
-        businessEmail: true,
-        phoneNumber: true,
-        businessAddress: true,
-        bankName: true,
-        accountNumber: true,
-        accountHolderName: true,
-        ifscCode: true,
-        upiId: true,
-      },
+      select: { id: true, name: true, email: true, companyName: true, businessEmail: true, phoneNumber: true, businessAddress: true },
     });
 
     if (!user) {
@@ -96,7 +83,8 @@ export async function POST(request: NextRequest) {
       to: {
         clientName: project.client.name,
         clientEmail: project.client.email,
-        clientCompany: project.client.company || ''
+        clientPhone: project.client.phone || '',
+        clientAddress: project.client.address || ''
       },
       project: {
         name: project.name,
@@ -105,11 +93,11 @@ export async function POST(request: NextRequest) {
         amount: Number(project.rate)
       },
       payment: {
-        bankName: user.bankName || '',
-        accountNumber: user.accountNumber || '',
-        accountHolderName: user.accountHolderName || user.name,
-        ifscCode: user.ifscCode || '',
-        upiId: user.upiId || ''
+        bankName: '',
+        accountNumber: '',
+        accountHolderName: user.name,
+        ifscCode: '',
+        upiId: ''
       }
     };
 

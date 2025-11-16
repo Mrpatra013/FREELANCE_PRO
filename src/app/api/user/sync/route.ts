@@ -16,11 +16,10 @@ export async function POST(_request: NextRequest) {
     const email = data.user.email
 
     // Check if local user already exists
-    const existing = await prisma.user.findUnique({ where: { email } })
+    const existing = await prisma.user.findUnique({ where: { email }, select: { id: true, email: true, name: true } })
     if (existing) {
       // Return a minimal safe payload
-      const { password: _pw, ...safeUser } = existing as any
-      return NextResponse.json({ user: safeUser }, { status: 200 })
+      return NextResponse.json({ user: existing }, { status: 200 })
     }
 
     // Create a local user using Supabase metadata

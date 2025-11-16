@@ -13,6 +13,8 @@ export async function GET() {
     const user = await prisma.user.findUnique({
       where: { email: data.user.email },
       select: {
+        name: true,
+        email: true,
         companyName: true,
         businessEmail: true,
         phoneNumber: true,
@@ -156,6 +158,8 @@ export async function PUT(request: NextRequest) {
       where: { email: data.user.email },
       data: updateData,
       select: {
+        name: true,
+        email: true,
         companyName: true,
         businessEmail: true,
         phoneNumber: true,

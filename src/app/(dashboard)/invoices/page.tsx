@@ -192,13 +192,17 @@ export default function InvoicesPage() {
     }
 
     try {
+      await fetch('/api/user/sync', { method: 'POST' });
       const url = editingInvoice ? `/api/invoices/${editingInvoice.id}` : '/api/invoices';
       const method = editingInvoice ? 'PUT' : 'POST';
       
       // Prepare request body
       const requestBody: any = {
-        ...formData,
+        projectId: formData.projectId,
         amount: parseFloat(formData.amount),
+        description: formData.description,
+        dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : '',
+        status: formData.status,
       };
 
       // Include business information for new invoices if available

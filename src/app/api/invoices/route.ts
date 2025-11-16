@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
+import { hashSync } from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 
 // GET /api/invoices - Get all invoices for the authenticated user
@@ -13,6 +14,7 @@ export async function GET(request: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { email: data.user.email },
+      select: { id: true },
     });
 
     if (!user) {
@@ -80,21 +82,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { email: data.user.email },
+      select: { id: true, email: true, name: true },
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      const name = (data.user.user_metadata as any)?.name || data.user.email.split('@')[0];
+      const placeholder = hashSync(`supabase_${data.user.id}_placeholder`, 10);
+      user = await prisma.user.create({
+        data: {
+          email: data.user.email,
+          name,
+          password: placeholder,
+        },
+        select: { id: true, email: true, name: true },
+      });
     }
 
     const body = await request.json();
     const { projectId, amount, description, dueDate, status, freelancerInfo } = body;
 
-    // Validate required fields
-    if (!projectId || !amount || !dueDate) {
+    if (!projectId || !dueDate) {
       return NextResponse.json(
-        { error: 'Project, amount, and due date are required' },
+        { error: 'Project and due date are required' },
         { status: 400 }
       );
     }
@@ -124,22 +135,33 @@ export async function POST(request: NextRequest) {
     });
     const invoiceNumber = `INV-${String(invoiceCount + 1).padStart(4, '0')}`;
 
-    // Get client ID from the project
-    const projectWithClient = await prisma.project.findUnique({
-      where: { id: projectId },
-      include: { client: true },
-    });
+    const parsedAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      return NextResponse.json(
+        { error: 'Amount must be a positive number' },
+        { status: 400 }
+      );
+    }
 
-    // Prepare invoice data
+    const due = new Date(dueDate);
+    if (isNaN(due.getTime())) {
+      return NextResponse.json(
+        { error: 'Invalid due date' },
+        { status: 400 }
+      );
+    }
+
+    const finalStatus = status === 'PAID' ? 'PAID' : 'UNPAID';
+
     const invoiceData: any = {
       invoiceNumber,
       userId: user.id,
       projectId,
-      clientId: projectWithClient!.clientId,
-      amount: typeof amount === 'string' ? parseFloat(amount) : amount,
+      clientId: project.clientId,
+      amount: parsedAmount,
       description,
-      dueDate: new Date(dueDate),
-      status: status || 'UNPAID',
+      dueDate: due,
+      status: finalStatus,
     };
     
     console.log('Creating invoice with status:', status);
@@ -158,7 +180,7 @@ export async function POST(request: NextRequest) {
     // using the new structure
 
     // If status is PAID, set paidAt to current timestamp
-    if (status === 'PAID') {
+    if (finalStatus === 'PAID') {
       invoiceData.paidAt = new Date();
     }
 

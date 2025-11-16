@@ -69,6 +69,12 @@ export function ProjectDashboard() {
     return () => controller.abort();
   }, []);
   
+  const recentProjects = useMemo(() => {
+    return [...projects]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 5);
+  }, [projects]);
+
   // Handle project status change
   const handleStatusChange = async (projectId: string, newStatus: 'ACTIVE' | 'COMPLETED' | 'PAUSED', notes?: string) => {
     try {
@@ -127,12 +133,7 @@ export function ProjectDashboard() {
     return isBefore(deadline, today) && project.status === 'ACTIVE';
   });
   
-  // Get recently updated projects
-  const recentProjects = useMemo(() => {
-    return [...projects]
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, 5);
-  }, [projects]);
+  
 
   return (
     <div className="space-y-8">

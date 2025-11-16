@@ -25,11 +25,6 @@ export async function GET(
         businessEmail: true,
         phoneNumber: true,
         businessAddress: true,
-        bankName: true,
-        accountNumber: true,
-        accountHolderName: true,
-        ifscCode: true,
-        upiId: true,
       },
     });
 
@@ -78,7 +73,8 @@ export async function GET(
       to: {
         clientName: invoice.project.client.name,
         clientEmail: invoice.project.client.email,
-        clientCompany: invoice.project.client.company || ''
+        clientPhone: invoice.project.client.phone || '',
+        clientAddress: invoice.project.client.address || ''
       },
       project: {
         name: invoice.project.name,
@@ -87,11 +83,11 @@ export async function GET(
         amount: Number(invoice.amount) || 0
       },
       payment: {
-        bankName: user.bankName || '',
-        accountNumber: user.accountNumber || '',
-        accountHolderName: user.accountHolderName || user.name,
-        ifscCode: user.ifscCode || '',
-        upiId: user.upiId || ''
+        bankName: '',
+        accountNumber: '',
+        accountHolderName: user.name,
+        ifscCode: '',
+        upiId: ''
       },
       items: [{
         description: invoice.description || invoice.project.name || 'Project work',

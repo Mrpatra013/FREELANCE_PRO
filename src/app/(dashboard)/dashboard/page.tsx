@@ -171,7 +171,7 @@ export default async function DashboardPage() {
               <p className="text-sm text-muted-foreground">No outstanding payments. Great job!</p>
             ) : (
               unpaidInvoices.map((invoice: any) => (
-                <div key={invoice.id} className="flex items-center justify-between">
+                <div key={invoice.id} className="flex items-center justify-between rounded-md border px-3 py-3 hover:bg-muted/30 transition-colors">
                   <div className="space-y-1">
                     <p className="text-sm font-medium leading-none">
                       Invoice #{invoice.invoiceNumber}

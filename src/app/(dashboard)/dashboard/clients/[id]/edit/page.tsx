@@ -29,6 +29,7 @@ export default async function EditClientPage({ params }: Props) {
 
   const user = await prisma.user.findUnique({
     where: { email: data.user.email },
+    select: { id: true },
   });
 
   if (!user) {

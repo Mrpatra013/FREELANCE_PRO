@@ -47,7 +47,29 @@ export default function ClientsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchClients();
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const { getSupabaseBrowserClient } = await import('@/lib/supabase/browser');
+        const supabase = getSupabaseBrowserClient();
+        const { data, error } = await supabase.auth.getUser();
+        if (error || !data?.user) {
+          setLoading(false);
+          return;
+        }
+        try {
+          await fetch('/api/user/sync', { method: 'POST', signal: controller.signal });
+        } catch (e) {
+          if ((e as any)?.name !== 'AbortError') {
+            console.error('User sync failed:', e);
+          }
+        }
+        await fetchClients();
+      } finally {
+        setLoading(false);
+      }
+    })();
+    return () => controller.abort();
   }, []);
 
   const fetchClients = async () => {

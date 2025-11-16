@@ -13,6 +13,10 @@ model User {
   password                String
   name                    String
   createdAt               DateTime  @default(now()) @map("created_at")
+  agencyName              String?   @map("agency_name")
+  phone                   String?
+  address                 String?
+  profilePictureUrl       String?   @map("profile_picture_url")
   companyName             String?   @map("company_name")
   businessEmail           String?   @map("business_email")
   phoneNumber             String?   @map("phone_number")

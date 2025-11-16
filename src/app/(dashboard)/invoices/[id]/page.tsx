@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -14,9 +13,7 @@ import PDFGenerator from '@/components/pdf/PDFGenerator';
 import { Printer, Download, Edit, ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 
 interface InvoiceDetailPageProps {
-  params: Promise<{
-    id: string;
-  }>;
+  params: { id: string };
 }
 
 interface InvoiceData {
@@ -45,22 +42,32 @@ interface InvoiceData {
 }
 
 export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
-  const { data: session, status } = useSession();
   const router = useRouter();
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPDFDialog, setShowPDFDialog] = useState(false);
   const [formattedInvoiceData, setFormattedInvoiceData] = useState<any>(null);
   const [userBusinessInfo, setUserBusinessInfo] = useState<any>(null);
-  const [invoiceId, setInvoiceId] = useState<string | null>(null);
+  const invoiceId = params.id;
 
   useEffect(() => {
-    const getParams = async () => {
-      const resolvedParams = await params;
-      setInvoiceId(resolvedParams.id);
-    };
-    getParams();
-  }, [params]);
+    (async () => {
+      try {
+        const { getSupabaseBrowserClient } = await import('@/lib/supabase/browser');
+        const supabase = getSupabaseBrowserClient();
+        const { data, error } = await supabase.auth.getUser();
+        if (error || !data?.user) {
+          router.push('/login');
+          return;
+        }
+        await fetchInvoice();
+        await fetchUserBusinessInfo();
+      } catch (e) {
+        console.error('Auth check failed:', e);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invoiceId]);
 
   const fetchInvoice = useCallback(async () => {
     if (!invoiceId) return;
@@ -95,12 +102,7 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
     }
   }, []);
 
-  useEffect(() => {
-    if (status === 'authenticated' && session && invoiceId) {
-      fetchInvoice();
-      fetchUserBusinessInfo();
-    }
-  }, [status, session, invoiceId, fetchInvoice, fetchUserBusinessInfo]);
+  // Fetch handled after Supabase auth check above
 
   const prepareInvoiceData = async () => {
     if (!invoice || !userBusinessInfo) return null;
@@ -114,14 +116,15 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
       amount: Number(invoice.amount),
       from: {
         businessName: invoice.freelancerCompanyName || userBusinessInfo?.companyName || 'Your Business',
-        phoneNumber: userBusinessInfo?.phoneNumber || '',
-        businessAddress: userBusinessInfo?.businessAddress || '',
-        businessEmail: invoice.freelancerBusinessEmail || userBusinessInfo?.businessEmail || ''
+        phoneNumber: userBusinessInfo?.phoneNumber || userBusinessInfo?.phone || '',
+        businessAddress: userBusinessInfo?.businessAddress || userBusinessInfo?.address || '',
+        businessEmail: invoice.freelancerBusinessEmail || userBusinessInfo?.businessEmail || userBusinessInfo?.email || ''
       },
       to: {
         clientName: invoice.project?.client?.name || 'Unknown Client',
         clientEmail: invoice.project?.client?.email || '',
-        clientCompany: invoice.project?.client?.company || undefined
+        clientPhone: invoice.project?.client?.phone || '',
+        clientAddress: invoice.project?.client?.address || ''
       },
       project: {
         name: invoice.project?.name || 'Unknown Project',
@@ -160,9 +163,9 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
         return;
       }
       
-      // Use the browser PDF generator
-      const { downloadInvoicePDF } = await import('@/lib/browser-pdf-generator');
-      await downloadInvoicePDF(invoiceData);
+      // Use the new blue template
+      const { downloadBlueInvoicePDF } = await import('@/lib/new-invoice-template');
+      await downloadBlueInvoicePDF(invoiceData);
       toast.success('Invoice PDF downloaded successfully');
     } catch (error) {
       console.error('Error downloading PDF:', error);
@@ -172,12 +175,19 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
 
   const handlePrint = async () => {
     try {
-      await prepareInvoiceData();
-      setShowPDFDialog(true);
-      // The actual printing will be handled by the PDFGenerator component
-      setTimeout(() => {
-        window.print();
-      }, 1000);
+      const invoiceData = await prepareInvoiceData();
+      if (!invoiceData) {
+        toast.error('Failed to prepare invoice data');
+        return;
+      }
+      const { getBlueInvoicePDFDataURL } = await import('@/lib/new-invoice-template');
+      const url = await getBlueInvoicePDFDataURL(invoiceData);
+      const win = window.open('', '_blank');
+      if (win) {
+        win.location.href = url;
+      } else {
+        toast.error('Please allow pop-ups to preview PDF');
+      }
     } catch (error) {
       console.error('Error preparing for print:', error);
       toast.error('Failed to prepare for printing');
@@ -308,9 +318,9 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
               <h3 className="text-lg font-semibold mb-2">From</h3>
               <div className="space-y-1">
                 <p className="font-medium">{invoice.freelancerCompanyName || userBusinessInfo?.companyName || 'Your Business'}</p>
-                <p>{userBusinessInfo?.address || 'Your Address'}</p>
-                <p>{invoice.freelancerBusinessEmail || userBusinessInfo?.businessEmail || 'your.email@example.com'}</p>
-                <p>{userBusinessInfo?.phoneNumber || 'Your Phone'}</p>
+                <p>{invoice.freelancerBusinessEmail || userBusinessInfo?.businessEmail || userBusinessInfo?.email || 'your.email@example.com'}</p>
+                <p>{userBusinessInfo?.phoneNumber || userBusinessInfo?.phone || 'Your Phone'}</p>
+                <p>{userBusinessInfo?.businessAddress || userBusinessInfo?.address || 'Your Address'}</p>
               </div>
             </div>
 
@@ -319,8 +329,9 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
               <h3 className="text-lg font-semibold mb-2">To</h3>
               <div className="space-y-1">
                 <p className="font-medium">{invoice.project.client.name}</p>
-                {invoice.project.client.company && <p>{invoice.project.client.company}</p>}
                 <p>{invoice.project.client.email}</p>
+                <p>{invoice.project.client.phone || 'Client Phone'}</p>
+                <p>{invoice.project.client.address || 'Client Address'}</p>
               </div>
             </div>
           </div>

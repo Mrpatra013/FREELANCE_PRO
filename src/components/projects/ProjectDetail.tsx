@@ -282,6 +282,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
     setIsGeneratingInvoice(true);
     
     try {
+      await fetch('/api/user/sync', { method: 'POST' });
       console.log('Generating invoice data for project:', projectId);
       // First, generate invoice data
       const generateResponse = await fetch('/api/invoices/generate', {
@@ -309,7 +310,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
           projectId: projectId,
           amount: parseFloat(invoiceFormData.amount) || 0,
           description: invoiceFormData.description || `Invoice for ${project?.name}`,
-          dueDate: invoiceFormData.dueDate,
+          dueDate: new Date(invoiceFormData.dueDate).toISOString(),
           // Use the selected status from the form
           status: invoiceFormData.status,
           freelancerInfo: {
@@ -355,6 +356,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
     setIsGeneratingInvoice(true);
     
     try {
+      await fetch('/api/user/sync', { method: 'POST' });
       // Save freelancer business info if requested
       if (freelancerData.saveForFuture) {
         await fetch('/api/user/business-info', {
@@ -396,7 +398,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
           projectId: projectId,
           amount: parseFloat(invoiceFormData.amount),
           description: invoiceFormData.description || `Invoice for ${project?.name}`,
-          dueDate: invoiceFormData.dueDate,
+          dueDate: new Date(invoiceFormData.dueDate).toISOString(),
           status: invoiceFormData.status,
           freelancerInfo: {
             companyName: freelancerData.companyName,

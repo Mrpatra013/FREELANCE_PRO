@@ -15,7 +15,10 @@ export async function getCurrentUser() {
 
   // Map Supabase user to local Prisma user record
   const { prisma } = await import('@/lib/prisma')
-  const user = await prisma.user.findUnique({ where: { email } })
+  const user = await prisma.user.findUnique({ 
+    where: { email },
+    select: { id: true, name: true, email: true },
+  })
   return user
 }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
@@ -37,6 +37,20 @@ interface InvoiceViewerProps {
 const InvoiceViewer = ({ invoice }: InvoiceViewerProps) => {
   const router = useRouter();
   const [isUpdating, setIsUpdating] = useState(false);
+  const [templateData, setTemplateData] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchTemplateData = async () => {
+      try {
+        const res = await fetch(`/api/invoices/${invoice.id}/template-data`);
+        if (res.ok) {
+          const data = await res.json();
+          setTemplateData(data);
+        }
+      } catch {}
+    };
+    fetchTemplateData();
+  }, [invoice.id]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -131,8 +145,16 @@ const InvoiceViewer = ({ invoice }: InvoiceViewerProps) => {
     }
   };
 
-  const printInvoice = () => {
-    window.print();
+  const printInvoice = async () => {
+    try {
+      if (!templateData) return;
+      const { getBlueInvoicePDFDataURL } = await import('@/lib/new-invoice-template');
+      const url = await getBlueInvoicePDFDataURL(templateData);
+      const win = window.open('', '_blank');
+      if (win) {
+        win.location.href = url;
+      }
+    } catch {}
   };
 
   const editInvoice = () => {
@@ -177,10 +199,10 @@ const InvoiceViewer = ({ invoice }: InvoiceViewerProps) => {
           <div>
             <h3 className="text-lg font-semibold mb-4 text-gray-600">FROM:</h3>
             <div className="space-y-1">
-              <p className="font-semibold">{invoice.freelancerCompanyName || 'Your Business'}</p>
-              <p>Phone: Contact information not available</p>
-              <p>Address: Contact information not available</p>
-              <p>{invoice.freelancerBusinessEmail || 'Email not available'}</p>
+              <p className="font-semibold">{templateData?.from?.businessName || 'Freelancer'}</p>
+              <p>{templateData?.from?.businessEmail || 'Email not available'}</p>
+              <p>{templateData?.from?.phoneNumber || 'Phone not available'}</p>
+              <p>{templateData?.from?.businessAddress || 'Address not available'}</p>
             </div>
           </div>
 
@@ -201,9 +223,10 @@ const InvoiceViewer = ({ invoice }: InvoiceViewerProps) => {
         {/* TO Section */}
         <div className="mb-8">
           <h3 className="text-lg font-semibold mb-4 text-gray-600">TO:</h3>
-          <p className="font-semibold">{invoice.project?.client?.name || 'Client Name'}</p>
-          <p>{invoice.project?.client?.email || 'client.email@example.com'}</p>
-          {invoice.project?.client?.company && <p>{invoice.project.client.company}</p>}
+          <p className="font-semibold">{templateData?.to?.clientName || invoice.project?.client?.name || 'Client Name'}</p>
+          <p>{templateData?.to?.clientEmail || invoice.project?.client?.email || 'client.email@example.com'}</p>
+          <p>{templateData?.to?.clientPhone || 'Phone not available'}</p>
+          <p>{templateData?.to?.clientAddress || 'Address not available'}</p>
         </div>
 
         {/* Project Details */}

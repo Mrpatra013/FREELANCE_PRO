@@ -53,6 +53,14 @@ export const invoiceSchema = z.object({
 
 
 
+export const profileSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name must be at most 100 characters'),
+  agencyName: z.string().max(100, 'Agency name must be at most 100 characters').optional(),
+  phone: z.string().regex(/^[+()\-\s\d]{7,20}$/i, 'Invalid phone number format').optional(),
+  address: z.string().max(500, 'Address must be at most 500 characters').optional(),
+  profilePictureUrl: z.string().optional(),
+})
+
 // API response schemas
 export const apiResponseSchema = z.object({
   success: z.boolean(),
@@ -82,6 +90,7 @@ export type RegisterInput = z.infer<typeof registerSchema>
 export type ClientInput = z.infer<typeof clientSchema>
 export type ProjectInput = z.infer<typeof projectSchema>
 export type InvoiceInput = z.infer<typeof invoiceSchema>
+export type ProfileInput = z.infer<typeof profileSchema>
 
 export type ApiResponse = z.infer<typeof apiResponseSchema>
 export type PaginationInput = z.infer<typeof paginationSchema>

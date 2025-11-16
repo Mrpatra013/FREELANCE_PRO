@@ -26,6 +26,7 @@ export interface InvoiceData {
     clientName: string;
     clientEmail: string;
     clientCompany?: string;
+    clientPhone?: string;
     clientAddress?: string;
   };
   shipTo?: {
@@ -498,8 +499,11 @@ export const downloadBlueInvoicePDF = (invoiceData: InvoiceData) => {
   doc.setFont('helvetica', 'normal');
   doc.text(invoiceData.to.clientName, billToX, sectionStartY + 15);
   doc.text(invoiceData.to.clientEmail, billToX, sectionStartY + 27);
-  if (invoiceData.to.clientCompany) {
-    doc.text(invoiceData.to.clientCompany, billToX, sectionStartY + 39);
+  if (invoiceData.to.clientPhone) {
+    doc.text(invoiceData.to.clientPhone, billToX, sectionStartY + 39);
+  }
+  if (invoiceData.to.clientAddress) {
+    doc.text(invoiceData.to.clientAddress, billToX, sectionStartY + 51);
   }
   
   // From section (centered right)
@@ -513,8 +517,9 @@ export const downloadBlueInvoicePDF = (invoiceData: InvoiceData) => {
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.text(invoiceData.from.businessName, fromX, sectionStartY + 15);
-  doc.text(invoiceData.from.phoneNumber, fromX, sectionStartY + 27);
-  doc.text(invoiceData.from.businessAddress, fromX, sectionStartY + 39);
+  doc.text(invoiceData.from.businessEmail, fromX, sectionStartY + 27);
+  doc.text(invoiceData.from.phoneNumber, fromX, sectionStartY + 39);
+  doc.text(invoiceData.from.businessAddress, fromX, sectionStartY + 51);
   
 
   

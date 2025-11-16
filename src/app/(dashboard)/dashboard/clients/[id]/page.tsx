@@ -36,6 +36,7 @@ export default async function ClientDetailPage({ params }: Props) {
 
   const user = await prisma.user.findUnique({
     where: { email: data.user.email },
+    select: { id: true },
   });
 
   if (!user) {
