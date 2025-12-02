@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-options';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
+import { getSupabaseServerClient } from '@/lib/supabase/server';
+import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 
-const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads', 'logos');
-const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_FILE_SIZE = 2 * 1024 * 1024;
 const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml'];
+const BUCKET = process.env.SUPABASE_LOGOS_BUCKET || 'logo';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const supabase = await getSupabaseServerClient();
+    const { data: userData, error } = await supabase.auth.getUser();
+    if (error || !userData?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -23,7 +21,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    // Validate file type
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
         { error: 'Invalid file type. Only PNG, JPG, JPEG, and SVG files are allowed.' },
@@ -31,34 +28,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
         { error: 'File size too large. Maximum size is 2MB.' },
         { status: 400 }
       );
     }
-
-    // Create upload directory if it doesn't exist
-    if (!existsSync(UPLOAD_DIR)) {
-      await mkdir(UPLOAD_DIR, { recursive: true });
+    const admin = getSupabaseAdminClient();
+    const { data: buckets } = await admin.storage.listBuckets();
+    const exists = buckets?.some((b: any) => (b.id ?? b.name) === BUCKET || b.name === BUCKET);
+    if (!exists) {
+      await admin.storage.createBucket(BUCKET, { public: true });
     }
 
-    // Generate unique filename
     const timestamp = Date.now();
-    const fileExtension = file.name.split('.').pop();
-    const userId = session.user.email.split('@')[0]; // Use email prefix as user identifier
-    const filename = `${userId}-${timestamp}.${fileExtension}`;
-    const filepath = join(UPLOAD_DIR, filename);
-
-    // Convert file to buffer and save
+    const extFromName = file.name.includes('.') ? (file.name.split('.').pop() || 'png') : 'png';
+    const ext = ['png', 'jpg', 'jpeg', 'svg'].includes(extFromName.toLowerCase())
+      ? extFromName.toLowerCase()
+      : (file.type === 'image/png' ? 'png' : file.type === 'image/jpeg' ? 'jpg' : file.type === 'image/svg+xml' ? 'svg' : 'png');
+    const userId = userData.user.id || userData.user.email.split('@')[0];
+    const filename = `${userId}-${timestamp}.${ext}`;
+    const path = `${userId}/${filename}`;
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(filepath, buffer);
-
-    // Return the public URL
-    const logoUrl = `/uploads/logos/${filename}`;
-
+    const uploadRes = await admin.storage.from(BUCKET).upload(path, buffer, { contentType: file.type });
+    if (uploadRes.error) {
+      return NextResponse.json({ error: 'Failed to upload to storage' }, { status: 500 });
+    }
+    const { data: publicUrlData } = admin.storage.from(BUCKET).getPublicUrl(path);
+    const logoUrl = publicUrlData.publicUrl;
     return NextResponse.json({ logoUrl }, { status: 200 });
   } catch (error) {
     console.error('Logo upload error:', error);
@@ -68,3 +66,6 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+      
+     
+    

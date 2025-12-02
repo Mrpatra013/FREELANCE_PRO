@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -57,8 +58,30 @@ export default function RegisterPage() {
 
       toast.success('Account created successfully!');
 
-      // Redirect to login page after successful registration
-      router.push('/login');
+      const supabase = getSupabaseBrowserClient();
+      try {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+        if (signInError) {
+          const msg = signInError.message?.toLowerCase() || '';
+          if (msg.includes('email') && msg.includes('confirm')) {
+            toast.info('Please verify your email, then log in.');
+          } else {
+            toast.info('Please log in with your new credentials.');
+          }
+          router.push('/login');
+          return;
+        }
+        toast.success('Logged in successfully');
+        router.push('/dashboard');
+        router.refresh();
+        return;
+      } catch {
+        toast.info('Please log in with your new credentials.');
+        router.push('/login');
+      }
     } catch (error: any) {
       console.error('Registration error:', error);
       toast.error(error.message || 'Something went wrong. Please try again.');

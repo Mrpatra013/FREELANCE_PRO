@@ -34,6 +34,8 @@ interface InvoiceData {
       name: string;
       email: string;
       company?: string;
+      phone?: string;
+      address?: string;
     };
   };
   freelancerCompanyName?: string;
@@ -112,6 +114,7 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
       invoiceNumber: invoice.invoiceNumber,
       invoiceDate: new Date(invoice.createdAt).toLocaleDateString(),
       dueDate: invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '',
+      terms: 'Payment due within 30 days',
       status: invoice.status,
       amount: Number(invoice.amount),
       from: {
@@ -141,9 +144,9 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
       },
       items: [{
         description: invoice.description || invoice.project?.name || 'Project work',
-        hours: 1,
+        quantity: 1,
         rate: Number(invoice.amount),
-        total: Number(invoice.amount)
+        amount: Number(invoice.amount)
       }],
       subtotal: Number(invoice.amount),
       taxRate: 0,

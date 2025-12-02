@@ -2,16 +2,21 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { DashboardNav } from '../../components/dashboard-nav';
 import { Toaster } from '@/components/ui/toaster';
+import { getSupabaseServerClient } from '@/lib/supabase/server';
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getCurrentUser();
-
-  if (!user) {
+  const supabase = await getSupabaseServerClient();
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data?.user) {
     redirect('/login');
+  }
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect('/register');
   }
 
   return (

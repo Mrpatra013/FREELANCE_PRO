@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser'
+import { useEffect, useState } from 'react'
 
 
 interface User {
@@ -29,6 +30,25 @@ interface DashboardNavProps {
 export function DashboardNav({ user }: DashboardNavProps) {
   const pathname = usePathname();
   const supabase = getSupabaseBrowserClient()
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const res = await fetch('/api/user/business-info')
+        if (!res.ok) return
+        const data = await res.json()
+        if (mounted && data?.logoUrl) {
+          setLogoUrl(data.logoUrl)
+        }
+      } catch (_) {
+      }
+    })()
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background">
@@ -63,8 +83,8 @@ export function DashboardNav({ user }: DashboardNavProps) {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    {user.profilePictureUrl && (
-                      <AvatarImage src={user.profilePictureUrl} alt={user.name || 'User'} />
+                    {(logoUrl || user.profilePictureUrl) && (
+                      <AvatarImage src={logoUrl || (user.profilePictureUrl as string)} alt={user.name || 'User'} />
                     )}
                     <AvatarFallback>
                       {user.name?.charAt(0).toUpperCase() || 'U'}

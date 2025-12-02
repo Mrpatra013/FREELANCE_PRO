@@ -32,6 +32,10 @@ export default function LoginPage() {
 
     try {
       const supabase = getSupabaseBrowserClient();
+      const { data: current } = await supabase.auth.getUser();
+      if (current?.user?.email && current.user.email !== formData.email) {
+        await supabase.auth.signOut();
+      }
       const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
@@ -40,10 +44,16 @@ export default function LoginPage() {
       if (error) {
         console.error('❌ Login failed with error:', error.message);
         toast.error(`Login failed: ${error.message}`);
+        router.push('/register');
         return;
       }
 
       if (data.session) {
+        const profileRes = await fetch('/api/user/profile');
+        if (profileRes.status === 404) {
+          router.push('/register');
+          return;
+        }
         toast.success('Login successful!');
         const redirectTo = search.get('redirectTo') ?? '/dashboard';
         router.push(redirectTo);
@@ -52,9 +62,11 @@ export default function LoginPage() {
       }
 
       toast.error('Login result unclear. Please try again.');
+      router.push('/register');
     } catch (error) {
       console.error('💥 Login error:', error);
       toast.error('Something went wrong. Please try again.');
+      router.push('/register');
     } finally {
       setIsLoading(false);
     }
