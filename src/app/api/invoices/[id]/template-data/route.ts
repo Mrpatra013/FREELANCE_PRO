@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
+import { format } from 'date-fns';
 
 // GET /api/invoices/[id]/template-data - Get formatted data for invoice viewer/PDF generation
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   try {
     const supabase = await getSupabaseServerClient();
@@ -54,7 +52,7 @@ export async function GET(
     // Format dates
     const formatDate = (date: Date | null) => {
       if (!date) return '';
-      return new Date(date).toLocaleDateString();
+      return format(new Date(date), 'dd-MM-yyyy');
     };
 
     // Prepare invoice data structure for template/PDF
@@ -68,45 +66,44 @@ export async function GET(
         businessName: invoice.freelancerCompanyName || user.companyName || user.name,
         phoneNumber: user.phoneNumber || '',
         businessAddress: user.businessAddress || '',
-        businessEmail: invoice.freelancerBusinessEmail || user.businessEmail || user.email
+        businessEmail: invoice.freelancerBusinessEmail || user.businessEmail || user.email,
       },
       to: {
         clientName: invoice.project.client.name,
         clientEmail: invoice.project.client.email,
         clientPhone: invoice.project.client.phone || '',
-        clientAddress: invoice.project.client.address || ''
+        clientAddress: invoice.project.client.address || '',
       },
       project: {
         name: invoice.project.name,
         description: invoice.description || invoice.project.description || '',
         rate: Number(invoice.project.rate) || 0,
-        amount: Number(invoice.amount) || 0
+        amount: Number(invoice.amount) || 0,
       },
       payment: {
         bankName: '',
         accountNumber: '',
         accountHolderName: user.name,
         ifscCode: '',
-        upiId: ''
+        upiId: '',
       },
-      items: [{
-        description: invoice.description || invoice.project.name || 'Project work',
-        hours: 1,
-        rate: Number(invoice.amount),
-        total: Number(invoice.amount)
-      }],
+      items: [
+        {
+          description: invoice.description || invoice.project.name || 'Project work',
+          hours: 1,
+          rate: Number(invoice.amount),
+          total: Number(invoice.amount),
+        },
+      ],
       subtotal: Number(invoice.amount),
       taxRate: 0,
       taxAmount: 0,
-      paymentTerms: ''
+      paymentTerms: '',
     };
 
     return NextResponse.json(invoiceData);
   } catch (error) {
     console.error('Error generating invoice template data:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

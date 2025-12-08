@@ -7,7 +7,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Upload, Building2, Image as ImageIcon, Phone, MapPin, CreditCard } from 'lucide-react';
+import {
+  Upload,
+  Building2,
+  Image as ImageIcon,
+  Phone,
+  MapPin,
+  CreditCard,
+  Trash2,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { BankingDetailsToggle, BankingFieldToggle } from './BankingDetailsToggle';
 import { Textarea } from '@/components/ui/textarea';
@@ -36,7 +44,7 @@ export function BusinessInfoSection() {
     accountNumber: '',
     accountHolderName: '',
     ifscCode: '',
-    upiId: ''
+    upiId: '',
   });
   const [showBankingDetails, setShowBankingDetails] = useState(false);
   const [showAccountNumber, setShowAccountNumber] = useState(false);
@@ -63,7 +71,7 @@ export function BusinessInfoSection() {
             accountNumber: data.accountNumber || '',
             accountHolderName: data.accountHolderName || '',
             ifscCode: data.ifscCode || '',
-            upiId: data.upiId || ''
+            upiId: data.upiId || '',
           });
           setLogoPreview(data.logoUrl || '');
         }
@@ -94,7 +102,7 @@ export function BusinessInfoSection() {
       }
 
       setLogoFile(file);
-      
+
       // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -117,21 +125,56 @@ export function BusinessInfoSection() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to upload logo');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to upload logo');
       }
 
       const data = await response.json();
       return data.logoUrl;
     } catch (error) {
       console.error('Error uploading logo:', error);
-      toast.error('Failed to upload logo');
+      toast.error(error instanceof Error ? error.message : 'Failed to upload logo');
       return null;
+    }
+  };
+
+  const handleRemoveLogo = async () => {
+    if (logoFile) {
+      // Clear pending upload
+      setLogoFile(null);
+      setLogoPreview(businessInfo.logoUrl || '');
+      toast.info('Upload cancelled');
+      return;
+    }
+
+    if (!businessInfo.logoUrl) return;
+
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/upload/logo', {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || 'Failed to remove logo');
+      }
+
+      setBusinessInfo((prev) => ({ ...prev, logoUrl: '' }));
+      setLogoPreview('');
+      window.dispatchEvent(new CustomEvent('logo-updated', { detail: { logoUrl: null } }));
+      toast.success('Logo removed successfully');
+    } catch (error) {
+      console.error('Error removing logo:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to remove logo');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate required fields
     if (!businessInfo.companyName || !businessInfo.businessEmail) {
       toast.error('Company name and business email are required');
@@ -162,6 +205,14 @@ export function BusinessInfoSection() {
       if (logoFile) {
         const uploadedLogoUrl = await uploadLogo();
         if (uploadedLogoUrl) {
+          // If there was an existing logo on server, delete it
+          if (businessInfo.logoUrl) {
+            try {
+              await fetch('/api/upload/logo', { method: 'DELETE' });
+            } catch (err) {
+              console.error('Failed to delete old logo:', err);
+            }
+          }
           logoUrl = uploadedLogoUrl;
         } else {
           setIsSaving(false);
@@ -194,9 +245,10 @@ export function BusinessInfoSection() {
       }
 
       // Update local state
-      setBusinessInfo(prev => ({ ...prev, logoUrl }));
+      setBusinessInfo((prev) => ({ ...prev, logoUrl }));
       setLogoFile(null);
-      
+
+      window.dispatchEvent(new CustomEvent('logo-updated', { detail: { logoUrl } }));
       toast.success('Business information saved successfully');
     } catch (error) {
       console.error('Error saving business info:', error);
@@ -208,23 +260,23 @@ export function BusinessInfoSection() {
 
   // Validation functions
   const validatePhoneNumber = (phone: string): boolean => {
-    const phoneRegex = /^(\+91[\-\s]?)?[0]?(91)?[789]\d{9}$/
-    return phoneRegex.test(phone.replace(/[\s\-]/g, ''))
-  }
+    const phoneRegex = /^(\+91[\-\s]?)?[0]?(91)?[789]\d{9}$/;
+    return phoneRegex.test(phone.replace(/[\s\-]/g, ''));
+  };
 
   const validateIFSC = (ifsc: string): boolean => {
-    const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/
-    return ifscRegex.test(ifsc)
-  }
+    const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+    return ifscRegex.test(ifsc);
+  };
 
   const validateUPI = (upi: string): boolean => {
-    const upiRegex = /^[\w.-]+@[\w.-]+$/
-    return upiRegex.test(upi)
-  }
+    const upiRegex = /^[\w.-]+@[\w.-]+$/;
+    return upiRegex.test(upi);
+  };
 
   const handleInputChange = (field: keyof BusinessInfo, value: string) => {
-    setBusinessInfo(prev => ({ ...prev, [field]: value }))
-    
+    setBusinessInfo((prev) => ({ ...prev, [field]: value }));
+
     // Real-time validation feedback
     if (field === 'phoneNumber' && value && !validatePhoneNumber(value)) {
       // Could add validation state here if needed
@@ -271,16 +323,41 @@ export function BusinessInfoSection() {
               Company Logo
             </Label>
             <div className="flex items-center space-x-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => document.getElementById('logo-upload')?.click()}
-                disabled={isSaving}
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Upload Logo
-              </Button>
+              {logoPreview ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => document.getElementById('logo-upload')?.click()}
+                    disabled={isSaving}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Change Logo
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleRemoveLogo}
+                    disabled={isSaving}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Remove Logo
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => document.getElementById('logo-upload')?.click()}
+                  disabled={isSaving}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload Logo
+                </Button>
+              )}
               <input
                 id="logo-upload"
                 type="file"
@@ -289,9 +366,7 @@ export function BusinessInfoSection() {
                 className="hidden"
               />
             </div>
-            <p className="text-xs text-muted-foreground">
-              Recommended: Square image, max 5MB
-            </p>
+            <p className="text-xs text-muted-foreground">Recommended: Square image, max 5MB</p>
           </div>
         </div>
       </div>
@@ -310,9 +385,7 @@ export function BusinessInfoSection() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="companyName">
-                Company Name *
-              </Label>
+              <Label htmlFor="companyName">Company Name *</Label>
               <Input
                 id="companyName"
                 type="text"
@@ -325,9 +398,7 @@ export function BusinessInfoSection() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="businessEmail">
-                Business Email *
-              </Label>
+              <Label htmlFor="businessEmail">Business Email *</Label>
               <Input
                 id="businessEmail"
                 type="email"
@@ -381,23 +452,16 @@ export function BusinessInfoSection() {
                 <CreditCard className="h-5 w-5 mr-2" />
                 Banking Information
               </CardTitle>
-              <CardDescription>
-                Banking details for invoice payments (optional)
-              </CardDescription>
+              <CardDescription>Banking details for invoice payments (optional)</CardDescription>
             </div>
-            <BankingDetailsToggle
-              isVisible={showBankingDetails}
-              onToggle={setShowBankingDetails}
-            />
+            <BankingDetailsToggle isVisible={showBankingDetails} onToggle={setShowBankingDetails} />
           </div>
         </CardHeader>
         {showBankingDetails && (
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="bankName">
-                  Bank Name
-                </Label>
+                <Label htmlFor="bankName">Bank Name</Label>
                 <Input
                   id="bankName"
                   type="text"
@@ -409,9 +473,7 @@ export function BusinessInfoSection() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="accountHolderName">
-                  Account Holder Name
-                </Label>
+                <Label htmlFor="accountHolderName">Account Holder Name</Label>
                 <Input
                   id="accountHolderName"
                   type="text"
@@ -432,7 +494,7 @@ export function BusinessInfoSection() {
                 </Label>
                 <Input
                   id="accountNumber"
-                  type={showAccountNumber ? "text" : "password"}
+                  type={showAccountNumber ? 'text' : 'password'}
                   placeholder="Account number"
                   value={businessInfo.accountNumber}
                   onChange={(e) => handleInputChange('accountNumber', e.target.value)}
@@ -441,9 +503,7 @@ export function BusinessInfoSection() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="ifscCode">
-                  IFSC Code
-                </Label>
+                <Label htmlFor="ifscCode">IFSC Code</Label>
                 <Input
                   id="ifscCode"
                   type="text"
@@ -455,9 +515,7 @@ export function BusinessInfoSection() {
               </div>
 
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="upiId">
-                  UPI ID
-                </Label>
+                <Label htmlFor="upiId">UPI ID</Label>
                 <Input
                   id="upiId"
                   type="text"

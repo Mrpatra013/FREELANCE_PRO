@@ -2,7 +2,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MonthlyEarningsGraph } from '@/components/monthly-earnings-graph';
+import { WeeklyEarningsGraph } from '@/components/weekly-earnings-graph';
 import { EarningsDisplay } from '@/components/earnings-display';
 import Link from 'next/link';
 
@@ -124,7 +124,7 @@ export default async function DashboardPage() {
 
       {/* Earnings Chart */}
       <div className="grid gap-4 md:grid-cols-2">
-        <MonthlyEarningsGraph />
+        <WeeklyEarningsGraph />
         
         {/* Business Statistics */}
         <Card>

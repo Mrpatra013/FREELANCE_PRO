@@ -3,10 +3,7 @@ import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
 
 // GET /api/invoices/[id] - Get a specific invoice
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   try {
     const supabase = await getSupabaseServerClient();
@@ -45,18 +42,12 @@ export async function GET(
     return NextResponse.json(invoice);
   } catch (error) {
     console.error('Error fetching invoice:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
 // PUT /api/invoices/[id] - Update an invoice
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   try {
     const supabase = await getSupabaseServerClient();
@@ -99,10 +90,7 @@ export async function PUT(
 
     // Validate amount is positive
     if (amount <= 0) {
-      return NextResponse.json(
-        { error: 'Amount must be positive' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Amount must be positive' }, { status: 400 });
     }
 
     // Validate project belongs to user
@@ -114,19 +102,13 @@ export async function PUT(
     });
 
     if (!project) {
-      return NextResponse.json(
-        { error: 'Project not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
     // Validate status
     const validStatuses = ['PAID', 'UNPAID'];
     if (status && !validStatuses.includes(status)) {
-      return NextResponse.json(
-        { error: 'Invalid status' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
 
     // Prepare update data
@@ -136,7 +118,7 @@ export async function PUT(
       dueDate: new Date(dueDate),
       status: status || existingInvoice.status || 'UNPAID',
     };
-    
+
     console.log('Updating invoice with status:', status);
 
     // If status is being set to PAID, set paidAt to current timestamp
@@ -163,10 +145,7 @@ export async function PUT(
     return NextResponse.json(invoice);
   } catch (error) {
     console.error('Error updating invoice:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -176,10 +155,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  console.log('DELETE /api/invoices/[id] called with id:', id);
   try {
     const supabase = await getSupabaseServerClient();
     const { data, error } = await supabase.auth.getUser();
     if (error || !data?.user?.email) {
+      console.log('DELETE invoice: Unauthorized');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -188,6 +169,7 @@ export async function DELETE(
     });
 
     if (!user) {
+      console.log('DELETE invoice: User not found');
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
@@ -200,6 +182,7 @@ export async function DELETE(
     });
 
     if (!existingInvoice) {
+      console.log('DELETE invoice: Invoice not found or not owned by user');
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
     }
 
@@ -207,12 +190,12 @@ export async function DELETE(
       where: { id },
     });
 
+    console.log('DELETE invoice: Successfully deleted');
     return NextResponse.json({ message: 'Invoice deleted successfully' });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting invoice:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    // Return detailed error message if possible
+    const errorMessage = error.message || 'Internal server error';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

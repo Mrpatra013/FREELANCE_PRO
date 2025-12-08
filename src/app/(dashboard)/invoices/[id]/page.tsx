@@ -9,6 +9,8 @@ import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
+import { format } from 'date-fns';
+
 import PDFGenerator from '@/components/pdf/PDFGenerator';
 import { Printer, Download, Edit, ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 
@@ -73,15 +75,15 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
 
   const fetchInvoice = useCallback(async () => {
     if (!invoiceId) return;
-    
+
     try {
       setLoading(true);
       const response = await fetch(`/api/invoices/${invoiceId}`);
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch invoice');
       }
-      
+
       const data = await response.json();
       setInvoice(data);
     } catch (error) {
@@ -107,53 +109,61 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
   // Fetch handled after Supabase auth check above
 
   const prepareInvoiceData = async () => {
-    if (!invoice || !userBusinessInfo) return null;
-    
+    if (!invoice) return null;
+
     // Prepare the invoice data for PDF generation
     const data = {
       invoiceNumber: invoice.invoiceNumber,
-      invoiceDate: new Date(invoice.createdAt).toLocaleDateString(),
-      dueDate: invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '',
+      invoiceDate: format(new Date(invoice.createdAt), 'dd-MM-yyyy'),
+      dueDate: invoice.dueDate ? format(new Date(invoice.dueDate), 'dd-MM-yyyy') : '',
       terms: 'Payment due within 30 days',
       status: invoice.status,
       amount: Number(invoice.amount),
       from: {
-        businessName: invoice.freelancerCompanyName || userBusinessInfo?.companyName || 'Your Business',
+        businessName:
+          invoice.freelancerCompanyName || userBusinessInfo?.companyName || 'Your Business',
         phoneNumber: userBusinessInfo?.phoneNumber || userBusinessInfo?.phone || '',
         businessAddress: userBusinessInfo?.businessAddress || userBusinessInfo?.address || '',
-        businessEmail: invoice.freelancerBusinessEmail || userBusinessInfo?.businessEmail || userBusinessInfo?.email || ''
+        businessEmail:
+          invoice.freelancerBusinessEmail ||
+          userBusinessInfo?.businessEmail ||
+          userBusinessInfo?.email ||
+          '',
+        logoUrl: userBusinessInfo?.logoUrl || '',
       },
       to: {
         clientName: invoice.project?.client?.name || 'Unknown Client',
         clientEmail: invoice.project?.client?.email || '',
         clientPhone: invoice.project?.client?.phone || '',
-        clientAddress: invoice.project?.client?.address || ''
+        clientAddress: invoice.project?.client?.address || '',
       },
       project: {
         name: invoice.project?.name || 'Unknown Project',
         description: invoice.description || '',
         rate: Number(invoice.project?.rate) || 0,
-        amount: Number(invoice.amount) || 0
+        amount: Number(invoice.amount) || 0,
       },
       payment: {
         bankName: userBusinessInfo?.bankName || '',
         accountNumber: userBusinessInfo?.accountNumber || '',
         accountHolderName: userBusinessInfo?.accountHolderName || userBusinessInfo?.name || '',
         ifscCode: userBusinessInfo?.ifscCode || '',
-        upiId: userBusinessInfo?.upiId || ''
+        upiId: userBusinessInfo?.upiId || '',
       },
-      items: [{
-        description: invoice.description || invoice.project?.name || 'Project work',
-        quantity: 1,
-        rate: Number(invoice.amount),
-        amount: Number(invoice.amount)
-      }],
+      items: [
+        {
+          description: invoice.description || invoice.project?.name || 'Project work',
+          quantity: 1,
+          rate: Number(invoice.amount),
+          amount: Number(invoice.amount),
+        },
+      ],
       subtotal: Number(invoice.amount),
       taxRate: 0,
       taxAmount: 0,
-      paymentTerms: ''
+      paymentTerms: '',
     };
-    
+
     setFormattedInvoiceData(data);
     return data;
   };
@@ -165,7 +175,7 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
         toast.error('Failed to prepare invoice data');
         return;
       }
-      
+
       // Use the new blue template
       const { downloadBlueInvoicePDF } = await import('@/lib/new-invoice-template');
       await downloadBlueInvoicePDF(invoiceData);
@@ -199,7 +209,7 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
 
   const handleUpdateStatus = async (newStatus: 'PAID' | 'UNPAID') => {
     if (!invoice) return;
-    
+
     try {
       const response = await fetch(`/api/invoices/${invoice.id}`, {
         method: 'PUT',
@@ -211,7 +221,7 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
           amount: invoice.amount,
           dueDate: invoice.dueDate,
           status: newStatus,
-          description: invoice.description
+          description: invoice.description,
         }),
       });
 
@@ -274,9 +284,7 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
             Back
           </Button>
           <h1 className="text-3xl font-bold">Invoice #{invoice.invoiceNumber}</h1>
-          <Badge className={getStatusColor(invoice.status)}>
-            {invoice.status}
-          </Badge>
+          <Badge className={getStatusColor(invoice.status)}>{invoice.status}</Badge>
         </div>
         <div className="flex space-x-2">
           {invoice.status === 'UNPAID' && (
@@ -311,7 +319,7 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
         <CardHeader className="bg-muted/50">
           <CardTitle>Invoice Details</CardTitle>
           <CardDescription>
-            Created on {new Date(invoice.createdAt).toLocaleDateString()}
+            Created on {format(new Date(invoice.createdAt), 'dd-MM-yyyy')}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6">
@@ -320,10 +328,21 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
             <div>
               <h3 className="text-lg font-semibold mb-2">From</h3>
               <div className="space-y-1">
-                <p className="font-medium">{invoice.freelancerCompanyName || userBusinessInfo?.companyName || 'Your Business'}</p>
-                <p>{invoice.freelancerBusinessEmail || userBusinessInfo?.businessEmail || userBusinessInfo?.email || 'your.email@example.com'}</p>
+                <p className="font-medium">
+                  {invoice.freelancerCompanyName ||
+                    userBusinessInfo?.companyName ||
+                    'Your Business'}
+                </p>
+                <p>
+                  {invoice.freelancerBusinessEmail ||
+                    userBusinessInfo?.businessEmail ||
+                    userBusinessInfo?.email ||
+                    'your.email@example.com'}
+                </p>
                 <p>{userBusinessInfo?.phoneNumber || userBusinessInfo?.phone || 'Your Phone'}</p>
-                <p>{userBusinessInfo?.businessAddress || userBusinessInfo?.address || 'Your Address'}</p>
+                <p>
+                  {userBusinessInfo?.businessAddress || userBusinessInfo?.address || 'Your Address'}
+                </p>
               </div>
             </div>
 
@@ -359,11 +378,11 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
             )}
             <div className="flex justify-between">
               <span className="font-medium">Issue Date:</span>
-              <span>{new Date(invoice.createdAt).toLocaleDateString()}</span>
+              <span>{format(new Date(invoice.createdAt), 'dd-MM-yyyy')}</span>
             </div>
             <div className="flex justify-between">
               <span className="font-medium">Due Date:</span>
-              <span>{new Date(invoice.dueDate).toLocaleDateString()}</span>
+              <span>{format(new Date(invoice.dueDate), 'dd-MM-yyyy')}</span>
             </div>
           </div>
 
@@ -376,20 +395,20 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
               <div className="grid grid-cols-2 gap-2">
                 <span className="font-medium">Bank Name:</span>
                 <span>{userBusinessInfo.bankName}</span>
-                
+
                 <span className="font-medium">Account Holder:</span>
                 <span>{userBusinessInfo.accountHolderName || userBusinessInfo.name}</span>
-                
+
                 <span className="font-medium">Account Number:</span>
                 <span>{userBusinessInfo.accountNumber}</span>
-                
+
                 {userBusinessInfo.ifscCode && (
                   <>
                     <span className="font-medium">IFSC Code:</span>
                     <span>{userBusinessInfo.ifscCode}</span>
                   </>
                 )}
-                
+
                 {userBusinessInfo.upiId && (
                   <>
                     <span className="font-medium">UPI ID:</span>
@@ -417,8 +436,8 @@ export default function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
             <DialogTitle>Invoice PDF</DialogTitle>
           </DialogHeader>
           {formattedInvoiceData && (
-            <PDFGenerator 
-              invoiceData={formattedInvoiceData} 
+            <PDFGenerator
+              invoiceData={formattedInvoiceData}
               onDownloadComplete={() => {
                 toast.success('PDF downloaded successfully');
                 setShowPDFDialog(false);

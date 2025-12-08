@@ -1,24 +1,32 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { getCurrentUser } from '@/lib/auth';
+import { DashboardNav } from '@/components/dashboard-nav';
 
-export default function Home() {
+export default async function Home() {
+  const user = await getCurrentUser();
+
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-40 border-b bg-background">
-        <div className="container mx-auto flex h-16 items-center justify-between py-4">
-          <div className="flex items-center gap-2">
-            <span className="text-xl font-bold">FreelancePro</span>
+      {user ? (
+        <DashboardNav user={user} />
+      ) : (
+        <header className="sticky top-0 z-40 border-b bg-background">
+          <div className="container mx-auto flex h-16 items-center justify-between py-4">
+            <Link href="/" className="flex items-center gap-2">
+              <span className="text-xl font-bold">FreelancePro</span>
+            </Link>
+            <nav className="flex items-center gap-4">
+              <Link href="/login">
+                <Button variant="ghost">Login</Button>
+              </Link>
+              <Link href="/register">
+                <Button>Get Started</Button>
+              </Link>
+            </nav>
           </div>
-          <nav className="flex items-center gap-4">
-            <Link href="/login">
-              <Button variant="ghost">Login</Button>
-            </Link>
-            <Link href="/register">
-              <Button>Get Started</Button>
-            </Link>
-          </nav>
-        </div>
-      </header>
+        </header>
+      )}
       <main className="flex-1">
         <section className="w-full py-12 md:py-24 lg:py-32">
           <div className="container mx-auto px-4 md:px-6">
@@ -28,20 +36,31 @@ export default function Home() {
                   Manage Your Freelance Business with Ease
                 </h1>
                 <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl dark:text-gray-400">
-                  All-in-one client and project management platform designed specifically for freelancers.
+                  All-in-one client and project management platform designed specifically for
+                  freelancers.
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                <Link href="/register">
-                  <Button size="lg" className="w-full min-[400px]:w-auto">
-                    Get Started
-                  </Button>
-                </Link>
-                <Link href="/login">
-                  <Button size="lg" variant="outline" className="w-full min-[400px]:w-auto">
-                    Login
-                  </Button>
-                </Link>
+                {user ? (
+                  <Link href="/dashboard">
+                    <Button size="lg" className="w-full min-[400px]:w-auto">
+                      Go to Dashboard
+                    </Button>
+                  </Link>
+                ) : (
+                  <>
+                    <Link href="/register">
+                      <Button size="lg" className="w-full min-[400px]:w-auto">
+                        Get Started
+                      </Button>
+                    </Link>
+                    <Link href="/login">
+                      <Button size="lg" variant="outline" className="w-full min-[400px]:w-auto">
+                        Login
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -52,37 +71,43 @@ export default function Home() {
               <div className="space-y-2">
                 <h3 className="text-xl font-bold">Client Management</h3>
                 <p className="text-gray-500 dark:text-gray-400">
-                  Organize all your client information in one place with easy access to contact details and project history.
+                  Organize all your client information in one place with easy access to contact
+                  details and project history.
                 </p>
               </div>
               <div className="space-y-2">
                 <h3 className="text-xl font-bold">Project Tracking</h3>
                 <p className="text-gray-500 dark:text-gray-400">
-                  Track project progress, deadlines, and status updates to ensure you deliver on time, every time.
+                  Track project progress, deadlines, and status updates to ensure you deliver on
+                  time, every time.
                 </p>
               </div>
               <div className="space-y-2">
                 <h3 className="text-xl font-bold">Invoice Generation</h3>
                 <p className="text-gray-500 dark:text-gray-400">
-                  Create professional invoices directly from your projects and track payment status effortlessly.
+                  Create professional invoices directly from your projects and track payment status
+                  effortlessly.
                 </p>
               </div>
               <div className="space-y-2">
                 <h3 className="text-xl font-bold">Expense Tracking</h3>
                 <p className="text-gray-500 dark:text-gray-400">
-                  Monitor project-related expenses to maintain profitability and prepare for tax season.
+                  Monitor project-related expenses to maintain profitability and prepare for tax
+                  season.
                 </p>
               </div>
               <div className="space-y-2">
                 <h3 className="text-xl font-bold">Business Analytics</h3>
                 <p className="text-gray-500 dark:text-gray-400">
-                  Gain insights into your freelance business with visual reports on revenue, project status, and client distribution.
+                  Gain insights into your freelance business with visual reports on revenue, project
+                  status, and client distribution.
                 </p>
               </div>
               <div className="space-y-2">
                 <h3 className="text-xl font-bold">Time Management</h3>
                 <p className="text-gray-500 dark:text-gray-400">
-                  Optimize your workflow and track billable hours to maximize productivity and profitability.
+                  Optimize your workflow and track billable hours to maximize productivity and
+                  profitability.
                 </p>
               </div>
             </div>

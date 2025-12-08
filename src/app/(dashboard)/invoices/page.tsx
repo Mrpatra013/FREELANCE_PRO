@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { format } from 'date-fns';
 import {
   Table,
   TableBody,
@@ -127,7 +128,7 @@ export default function InvoicesPage() {
       controller.abort();
     };
   }, [supabase]);
-  
+
   const fetchNextInvoiceNumber = async (signal?: AbortSignal) => {
     try {
       const response = await fetch('/api/invoices/count', { signal });
@@ -157,7 +158,10 @@ export default function InvoicesPage() {
 
   const fetchInvoices = async (signal?: AbortSignal) => {
     try {
-      const response = await fetch('/api/invoices?limit=25&page=1', { signal });
+      const response = await fetch('/api/invoices?limit=25&page=1', {
+        signal,
+        cache: 'no-store',
+      });
       if (response.ok) {
         const data = await response.json();
         setInvoices(data);
@@ -185,7 +189,7 @@ export default function InvoicesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.projectId) {
       toast.error('Please select a project');
       return;
@@ -195,7 +199,7 @@ export default function InvoicesPage() {
       await fetch('/api/user/sync', { method: 'POST' });
       const url = editingInvoice ? `/api/invoices/${editingInvoice.id}` : '/api/invoices';
       const method = editingInvoice ? 'PUT' : 'POST';
-      
+
       // Prepare request body
       const requestBody: any = {
         projectId: formData.projectId,
@@ -213,7 +217,7 @@ export default function InvoicesPage() {
           logoUrl: userBusinessInfo.logoUrl,
         };
       }
-      
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -223,7 +227,9 @@ export default function InvoicesPage() {
       });
 
       if (response.ok) {
-        toast.success(editingInvoice ? 'Invoice updated successfully' : 'Invoice created successfully');
+        toast.success(
+          editingInvoice ? 'Invoice updated successfully' : 'Invoice created successfully'
+        );
         setIsDialogOpen(false);
         setEditingInvoice(null);
         resetForm();
@@ -255,7 +261,7 @@ export default function InvoicesPage() {
 
   const handleDeleteConfirm = async () => {
     if (!deleteInvoiceId) return;
-    
+
     setIsDeleting(true);
     try {
       const response = await fetch(`/api/invoices/${deleteInvoiceId}`, {
@@ -264,6 +270,8 @@ export default function InvoicesPage() {
 
       if (response.ok) {
         toast.success('Invoice deleted successfully');
+        // Update local state immediately
+        setInvoices((prev) => prev.filter((inv) => inv.id !== deleteInvoiceId));
         fetchInvoices();
       } else {
         const errorData = await response.json();
@@ -281,48 +289,50 @@ export default function InvoicesPage() {
     // Fetch user business info for the invoice
     const userResponse = await fetch('/api/user/business-info');
     const userData = await userResponse.json();
-    
+
     // Prepare the invoice data for PDF generation
     return {
       invoiceNumber: invoice.invoiceNumber,
-      invoiceDate: new Date(invoice.createdAt).toLocaleDateString(),
-      dueDate: invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '',
+      invoiceDate: format(new Date(invoice.createdAt), 'dd/MM/yyyy'),
+      dueDate: invoice.dueDate ? format(new Date(invoice.dueDate), 'dd/MM/yyyy') : '',
       status: invoice.status,
       amount: Number(invoice.amount),
       from: {
         businessName: invoice.freelancerCompanyName || userData?.companyName || 'Your Business',
         phoneNumber: userData?.phoneNumber || '',
         businessAddress: userData?.businessAddress || '',
-        businessEmail: invoice.freelancerBusinessEmail || userData?.businessEmail || ''
+        businessEmail: invoice.freelancerBusinessEmail || userData?.businessEmail || '',
       },
       to: {
         clientName: invoice.project?.client?.name || 'Unknown Client',
         clientEmail: invoice.project?.client?.email || '',
-        clientCompany: invoice.project?.client?.company || undefined
+        clientCompany: invoice.project?.client?.company || undefined,
       },
       project: {
         name: invoice.project?.name || 'Unknown Project',
         description: invoice.description || '',
         rate: Number(invoice.project?.rate) || 0,
-        amount: Number(invoice.amount) || 0
+        amount: Number(invoice.amount) || 0,
       },
       payment: {
         bankName: userData?.bankName || '',
         accountNumber: userData?.accountNumber || '',
         accountHolderName: userData?.accountHolderName || userData?.name || '',
         ifscCode: userData?.ifscCode || '',
-        upiId: userData?.upiId || ''
+        upiId: userData?.upiId || '',
       },
-      items: [{
-        description: invoice.description || invoice.project?.name || 'Project work',
-        hours: 1,
-        rate: Number(invoice.amount),
-        total: Number(invoice.amount)
-      }],
+      items: [
+        {
+          description: invoice.description || invoice.project?.name || 'Project work',
+          hours: 1,
+          rate: Number(invoice.amount),
+          total: Number(invoice.amount),
+        },
+      ],
       subtotal: Number(invoice.amount),
       taxRate: 0,
       taxAmount: 0,
-      paymentTerms: ''
+      paymentTerms: '',
     };
   };
 
@@ -330,7 +340,7 @@ export default function InvoicesPage() {
     try {
       const invoiceData = await prepareInvoiceData(invoice);
       setSelectedInvoiceData(invoiceData);
-      
+
       // Open the PDF generation dialog
       setShowPDFDialog(true);
       toast.success('Preparing PDF for download...');
@@ -344,7 +354,7 @@ export default function InvoicesPage() {
     try {
       const invoiceData = await prepareInvoiceData(invoice);
       setSelectedInvoiceData(invoiceData);
-      
+
       // Open the PDF generation dialog with preview mode
       setShowPDFDialog(true);
       toast.success('Preparing PDF preview...');
@@ -406,8 +416,8 @@ export default function InvoicesPage() {
               <DialogTitle>Invoice PDF</DialogTitle>
             </DialogHeader>
             {selectedInvoiceData && (
-              <PDFGenerator 
-                invoiceData={selectedInvoiceData} 
+              <PDFGenerator
+                invoiceData={selectedInvoiceData}
                 onDownloadComplete={() => {
                   toast.success('PDF downloaded successfully');
                   setShowPDFDialog(false);
@@ -437,9 +447,7 @@ export default function InvoicesPage() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>
-                {editingInvoice ? 'Edit Invoice' : 'Create New Invoice'}
-              </DialogTitle>
+              <DialogTitle>{editingInvoice ? 'Edit Invoice' : 'Create New Invoice'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               {nextInvoiceNumber && (
@@ -501,7 +509,9 @@ export default function InvoicesPage() {
                 <Label htmlFor="status">Status</Label>
                 <Select
                   value={formData.status}
-                  onValueChange={(value: 'PAID' | 'UNPAID') => setFormData({ ...formData, status: value })}
+                  onValueChange={(value: 'PAID' | 'UNPAID') =>
+                    setFormData({ ...formData, status: value })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -513,16 +523,10 @@ export default function InvoicesPage() {
                 </Select>
               </div>
               <div className="flex justify-end space-x-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit">
-                  {editingInvoice ? 'Update' : 'Create'}
-                </Button>
+                <Button type="submit">{editingInvoice ? 'Update' : 'Create'}</Button>
               </div>
             </form>
           </DialogContent>
@@ -554,23 +558,15 @@ export default function InvoicesPage() {
               <TableBody>
                 {invoices.map((invoice) => (
                   <TableRow key={invoice.id}>
-                    <TableCell className="font-medium">
-                      {invoice.invoiceNumber}
-                    </TableCell>
+                    <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
                     <TableCell>
                       <div>{invoice.project.name}</div>
                     </TableCell>
                     <TableCell>{invoice.project.client.name}</TableCell>
+                    <TableCell>{formatCurrency(invoice.amount)}</TableCell>
+                    <TableCell>{formatDate(invoice.dueDate)}</TableCell>
                     <TableCell>
-                      {formatCurrency(invoice.amount)}
-                    </TableCell>
-                    <TableCell>
-                      {formatDate(invoice.dueDate)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(invoice.status)}>
-                        {invoice.status}
-                      </Badge>
+                      <Badge className={getStatusColor(invoice.status)}>{invoice.status}</Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
@@ -590,11 +586,7 @@ export default function InvoicesPage() {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(invoice)}
-                        >
+                        <Button variant="outline" size="sm" onClick={() => handleEdit(invoice)}>
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button
@@ -630,8 +622,8 @@ export default function InvoicesPage() {
             <DialogTitle>Invoice PDF</DialogTitle>
           </DialogHeader>
           {selectedInvoiceData && (
-            <PDFGenerator 
-              invoiceData={selectedInvoiceData} 
+            <PDFGenerator
+              invoiceData={selectedInvoiceData}
               onDownloadComplete={() => {
                 toast.success('PDF downloaded successfully');
                 setShowPDFDialog(false);

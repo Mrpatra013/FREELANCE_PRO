@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
+import { format } from 'date-fns';
 
 // POST /api/invoices/generate - Generate invoice data for PDF creation
 export async function POST(request: NextRequest) {
@@ -13,7 +14,15 @@ export async function POST(request: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { email: data.user.email },
-      select: { id: true, name: true, email: true, companyName: true, businessEmail: true, phoneNumber: true, businessAddress: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        companyName: true,
+        businessEmail: true,
+        phoneNumber: true,
+        businessAddress: true,
+      },
     });
 
     if (!user) {
@@ -24,10 +33,7 @@ export async function POST(request: NextRequest) {
     const { projectId } = body;
 
     if (!projectId) {
-      return NextResponse.json(
-        { error: 'Project ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Project ID is required' }, { status: 400 });
     }
 
     // Verify that the project belongs to the user
@@ -42,10 +48,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!project) {
-      return NextResponse.json(
-        { error: 'Project not found or access denied' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Project not found or access denied' }, { status: 404 });
     }
 
     // Generate invoice number
@@ -65,7 +68,7 @@ export async function POST(request: NextRequest) {
 
     // Format dates
     const formatDate = (date: Date) => {
-      return date.toISOString().split('T')[0]; // YYYY-MM-DD format
+      return format(date, 'dd-MM-yyyy');
     };
 
     // Prepare invoice data structure
@@ -78,35 +81,32 @@ export async function POST(request: NextRequest) {
         businessName: user.companyName || user.name,
         phoneNumber: user.phoneNumber || '',
         businessAddress: user.businessAddress || '',
-        businessEmail: user.businessEmail || user.email
+        businessEmail: user.businessEmail || user.email,
       },
       to: {
         clientName: project.client.name,
         clientEmail: project.client.email,
         clientPhone: project.client.phone || '',
-        clientAddress: project.client.address || ''
+        clientAddress: project.client.address || '',
       },
       project: {
         name: project.name,
         description: project.description || '',
         rate: Number(project.rate),
-        amount: Number(project.rate)
+        amount: Number(project.rate),
       },
       payment: {
         bankName: '',
         accountNumber: '',
         accountHolderName: user.name,
         ifscCode: '',
-        upiId: ''
-      }
+        upiId: '',
+      },
     };
 
     return NextResponse.json(invoiceData);
   } catch (error) {
     console.error('Error generating invoice data:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -34,6 +34,15 @@ export function DashboardNav({ user }: DashboardNavProps) {
 
   useEffect(() => {
     let mounted = true
+    
+    const handleLogoUpdate = (event: CustomEvent) => {
+      if (mounted) {
+        setLogoUrl(event.detail.logoUrl)
+      }
+    }
+
+    window.addEventListener('logo-updated', handleLogoUpdate as EventListener)
+
     ;(async () => {
       try {
         const res = await fetch('/api/user/business-info')
@@ -45,8 +54,10 @@ export function DashboardNav({ user }: DashboardNavProps) {
       } catch (_) {
       }
     })()
+
     return () => {
       mounted = false
+      window.removeEventListener('logo-updated', handleLogoUpdate as EventListener)
     }
   }, [])
 
@@ -54,7 +65,7 @@ export function DashboardNav({ user }: DashboardNavProps) {
     <header className="sticky top-0 z-40 border-b bg-background">
       <div className="container mx-auto flex h-16 items-center justify-between py-4">
         <div className="flex items-center gap-2">
-          <Link href="/dashboard" className="text-xl font-bold">
+          <Link href="/" className="text-xl font-bold">
             FreelancePro
           </Link>
         </div>
