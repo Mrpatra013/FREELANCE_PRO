@@ -35,6 +35,7 @@ import { Plus, Edit, Trash2, Download, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import PDFGenerator from '@/components/pdf/PDFGenerator';
 import { DeleteConfirmationModal } from '@/components/clients/DeleteConfirmationModal';
+import InvoiceCreationModal from '@/components/invoices/InvoiceCreationModal';
 
 interface Client {
   id: string;
@@ -438,24 +439,29 @@ export default function InvoicesPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Invoices</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Invoice
-            </Button>
-          </DialogTrigger>
+        <Button
+          onClick={() => {
+            setEditingInvoice(null);
+            resetForm();
+            setIsDialogOpen(true);
+          }}
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Create Invoice
+        </Button>
+
+        <Dialog
+          open={isDialogOpen && !!editingInvoice}
+          onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) setEditingInvoice(null);
+          }}
+        >
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>{editingInvoice ? 'Edit Invoice' : 'Create New Invoice'}</DialogTitle>
+              <DialogTitle>Edit Invoice</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {nextInvoiceNumber && (
-                <div className="bg-muted p-3 rounded-md mb-4">
-                  <div className="text-sm font-medium">Invoice Number (auto-generated)</div>
-                  <div className="text-lg font-bold">{nextInvoiceNumber}</div>
-                </div>
-              )}
               <div className="space-y-2">
                 <Label htmlFor="project">Project *</Label>
                 <Select
@@ -526,11 +532,18 @@ export default function InvoicesPage() {
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit">{editingInvoice ? 'Update' : 'Create'}</Button>
+                <Button type="submit">Update</Button>
               </div>
             </form>
           </DialogContent>
         </Dialog>
+
+        <InvoiceCreationModal
+          open={isDialogOpen && !editingInvoice}
+          onOpenChange={setIsDialogOpen}
+          projects={projects}
+          nextInvoiceNumber={nextInvoiceNumber}
+        />
       </div>
 
       <Card>
@@ -628,7 +641,7 @@ export default function InvoicesPage() {
                 toast.success('PDF downloaded successfully');
                 setShowPDFDialog(false);
               }}
-              onError={(error) => {
+              onError={(error: any) => {
                 console.error('PDF generation error:', error);
                 toast.error('Error generating PDF');
               }}

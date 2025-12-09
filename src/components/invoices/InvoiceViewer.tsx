@@ -248,23 +248,80 @@ const InvoiceViewer = ({ invoice }: InvoiceViewerProps) => {
           <p>{templateData?.to?.clientAddress || 'Address not available'}</p>
         </div>
 
-        {/* Project Details */}
+        {/* Project/Items Details */}
         <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-4 text-gray-600">PROJECT DETAILS:</h3>
-          <p>
-            <strong>Project:</strong> {invoice.project?.name || 'Project Name'}
-          </p>
-          <p>
-            <strong>Description:</strong>{' '}
-            {invoice.description || invoice.project?.description || 'No description available'}
-          </p>
-          <p>
-            <strong>Rate:</strong> {Number(invoice.project?.rate || 0).toFixed(2)}
-          </p>
-          <div className="text-right mt-4">
-            <p className="text-2xl font-bold">Total: {Number(invoice.amount || 0).toFixed(2)}</p>
-          </div>
+          <h3 className="text-lg font-semibold mb-4 text-gray-600">ITEMS:</h3>
+          
+          {templateData?.items && templateData.items.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b">
+                    <th className="py-2">Description</th>
+                    <th className="py-2 text-right">Qty</th>
+                    <th className="py-2 text-right">Price</th>
+                    <th className="py-2 text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {templateData.items.map((item: any, index: number) => (
+                    <tr key={index} className="border-b">
+                      <td className="py-2">{item.description}</td>
+                      <td className="py-2 text-right">{item.quantity}</td>
+                      <td className="py-2 text-right">${Number(item.rate || 0).toFixed(2)}</td>
+                      <td className="py-2 text-right">${Number(item.total || item.amount || 0).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              <div className="mt-4 space-y-2">
+                {templateData.subtotal !== undefined && (
+                  <div className="flex justify-between">
+                    <span className="font-medium">Subtotal:</span>
+                    <span>${Number(templateData.subtotal).toFixed(2)}</span>
+                  </div>
+                )}
+                {templateData.taxAmount > 0 && (
+                  <div className="flex justify-between">
+                    <span className="font-medium">Tax ({templateData.taxRate}%):</span>
+                    <span>${Number(templateData.taxAmount).toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-xl font-bold border-t pt-2">
+                  <span>Total:</span>
+                  <span>${Number(invoice.amount || 0).toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <p>
+                <strong>Project:</strong> {invoice.project?.name || 'Project Name'}
+              </p>
+              <p>
+                <strong>Description:</strong>{' '}
+                {invoice.description && !invoice.description.startsWith('{') 
+                  ? invoice.description 
+                  : invoice.project?.description || 'No description available'}
+              </p>
+              <p>
+                <strong>Rate:</strong> {Number(invoice.project?.rate || 0).toFixed(2)}
+              </p>
+              <div className="text-right mt-4">
+                <p className="text-2xl font-bold">Total: {Number(invoice.amount || 0).toFixed(2)}</p>
+              </div>
+            </div>
+          )}
         </div>
+        
+        {/* Notes / Terms */}
+        {templateData?.notes && (
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold mb-2 text-gray-600">NOTES:</h3>
+            <p className="whitespace-pre-wrap text-sm">{templateData.notes}</p>
+          </div>
+        )}
 
         {/* Payment Information */}
         <div className="mb-8">
@@ -294,3 +351,4 @@ const InvoiceViewer = ({ invoice }: InvoiceViewerProps) => {
 };
 
 export default InvoiceViewer;
+

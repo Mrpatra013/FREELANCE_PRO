@@ -23,6 +23,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         businessEmail: true,
         phoneNumber: true,
         businessAddress: true,
+        logoUrl: true,
+        bankName: true,
+        accountNumber: true,
+        accountHolderName: true,
+        ifscCode: true,
+        upiId: true,
       },
     });
 
@@ -55,6 +61,46 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return format(new Date(date), 'dd-MM-yyyy');
     };
 
+    // Parse description for detailed items (backward compatibility with plain text)
+    let items = [];
+    let subtotal = Number(invoice.amount);
+    let taxRate = 0;
+    let taxAmount = 0;
+    let notes = '';
+
+    try {
+      if (invoice.description && invoice.description.startsWith('{')) {
+        const parsedData = JSON.parse(invoice.description);
+        if (parsedData.items && Array.isArray(parsedData.items)) {
+          items = parsedData.items.map((item: any) => ({
+            description: item.description,
+            quantity: item.quantity,
+            rate: item.price, // Map price to rate
+            total: item.total,
+          }));
+          subtotal = parsedData.subtotal || subtotal;
+          taxRate = parsedData.taxRate || 0;
+          taxAmount = parsedData.taxAmount || 0;
+          notes = parsedData.notes || '';
+        }
+      }
+    } catch (e) {
+      // Failed to parse, treat as plain text
+      console.log('Description is not JSON or invalid:', e);
+    }
+
+    // Fallback if no items found in description
+    if (items.length === 0) {
+      items = [
+        {
+          description: invoice.description || invoice.project.name || 'Project work',
+          quantity: 1, // Changed from hours to quantity for consistency
+          rate: Number(invoice.amount),
+          total: Number(invoice.amount),
+        },
+      ];
+    }
+
     // Prepare invoice data structure for template/PDF
     const invoiceData = {
       invoiceNumber: invoice.invoiceNumber,
@@ -67,6 +113,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         phoneNumber: user.phoneNumber || '',
         businessAddress: user.businessAddress || '',
         businessEmail: invoice.freelancerBusinessEmail || user.businessEmail || user.email,
+        logoUrl: invoice.freelancerLogoUrl || user.logoUrl || null,
       },
       to: {
         clientName: invoice.project.client.name,
@@ -76,29 +123,23 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       },
       project: {
         name: invoice.project.name,
-        description: invoice.description || invoice.project.description || '',
+        description: invoice.project.description || '',
         rate: Number(invoice.project.rate) || 0,
         amount: Number(invoice.amount) || 0,
       },
       payment: {
-        bankName: '',
-        accountNumber: '',
-        accountHolderName: user.name,
-        ifscCode: '',
-        upiId: '',
+        bankName: user.bankName || '',
+        accountNumber: user.accountNumber || '',
+        accountHolderName: user.accountHolderName || user.name,
+        ifscCode: user.ifscCode || '',
+        upiId: user.upiId || '',
       },
-      items: [
-        {
-          description: invoice.description || invoice.project.name || 'Project work',
-          hours: 1,
-          rate: Number(invoice.amount),
-          total: Number(invoice.amount),
-        },
-      ],
-      subtotal: Number(invoice.amount),
-      taxRate: 0,
-      taxAmount: 0,
-      paymentTerms: '',
+      items: items,
+      subtotal: subtotal,
+      taxRate: taxRate,
+      taxAmount: taxAmount,
+      notes: notes,
+      paymentTerms: notes, // Use notes as payment terms/notes
     };
 
     return NextResponse.json(invoiceData);

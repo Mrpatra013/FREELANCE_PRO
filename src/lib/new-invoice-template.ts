@@ -54,6 +54,7 @@ export interface InvoiceData {
     quantity: number;
     rate: number;
     amount: number;
+    total?: number;
   }>;
   subtotal?: number;
   taxRate?: number;
@@ -361,19 +362,20 @@ export const generateNewInvoicePDF = async (invoiceData: InvoiceData): Promise<A
 
     contentY += 20;
 
-    const items = invoiceData.items || [
+    const items: NonNullable<InvoiceData['items']> = invoiceData.items || [
       {
         description: invoiceData.project.name || 'Project',
         quantity: 1,
         rate: invoiceData.project.amount || 0,
         amount: invoiceData.project.amount || 0,
+        total: invoiceData.project.amount || 0,
       },
     ];
 
     // Calculate total if 0
     let calculatedSubtotal = 0;
     items.forEach((item) => {
-      calculatedSubtotal += item.amount || 0;
+      calculatedSubtotal += item.total || item.amount || 0;
     });
 
     // Use provided subtotal or calculated one
@@ -385,7 +387,7 @@ export const generateNewInvoicePDF = async (invoiceData: InvoiceData): Promise<A
       item.description || '',
       `$${(item.rate || 0).toFixed(2)}`,
       (item.quantity || 0).toString(), // Using "Unit" column for Quantity/Hours
-      `$${(item.amount || 0).toFixed(2)}`,
+      `$${(item.total || item.amount || 0).toFixed(2)}`,
     ]);
 
     // 5. Items Table
